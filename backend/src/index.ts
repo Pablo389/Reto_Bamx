@@ -1,10 +1,11 @@
 import express, {Express, Request, Response} from 'express';
 import morgan from 'morgan';
+import 'dotenv/config';
 
 import userRoutes from './routes/userRoutes';
 
 const app: Express = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(morgan('dev'));
