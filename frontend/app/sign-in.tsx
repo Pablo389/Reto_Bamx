@@ -11,9 +11,23 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { FontAwesome } from "@expo/vector-icons";
 import { useSession } from "@/hooks/ctx";
 import { router } from "expo-router";
+import { useState } from "react";
 
 export default function LoginScreen() {
   const { signIn } = useSession();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = () => {
+    console.log("Email:", email, "password:", password);
+    signIn(email, password)
+      .then(() => {
+        router.replace("/"); // Navigate to the home screen after sign-in
+      })
+      .catch((error) => {
+        console.error("Failed to sign in:", error);
+      });
+  };
   return (
     <View style={styles.container}>
       {/* Logo */}
@@ -37,6 +51,7 @@ export default function LoginScreen() {
           placeholder="Email"
           placeholderTextColor="#808080"
           style={styles.input}
+          onChangeText={(text) => setEmail(text)}
         />
       </View>
 
@@ -53,6 +68,7 @@ export default function LoginScreen() {
           placeholderTextColor="#808080"
           secureTextEntry
           style={styles.input}
+          onChangeText={(text) => setPassword(text)}
         />
       </View>
 
@@ -62,16 +78,8 @@ export default function LoginScreen() {
       </TouchableOpacity>
 
       {/* Login Button */}
-      <TouchableOpacity style={styles.loginButton}>
-        <Text
-          style={styles.loginButtonText}
-          onPress={() => {
-            signIn();
-            router.replace("/");
-          }}
-        >
-          Login
-        </Text>
+      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+        <Text style={styles.loginButtonText}>Login</Text>
       </TouchableOpacity>
 
       {/* Divider */}

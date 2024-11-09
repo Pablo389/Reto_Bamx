@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { RouteProp } from "@react-navigation/native";
-import { RootStackParamList } from "../../constants/types";
+import { RootStackParamList } from "../../../../constants/types";
 
 type ActivityDetailRouteProp = RouteProp<RootStackParamList, "ActivityDetail">;
 

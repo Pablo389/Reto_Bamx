@@ -1,3 +1,4 @@
+// app/(home)/index.tsx
 import React from "react";
 import {
   View,
@@ -8,14 +9,8 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../../constants/types";
-
-type HomePageNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  "HomePage"
->;
 
 interface Activity {
   id: string;
@@ -33,7 +28,7 @@ const activities: Activity[] = [
     location: "centro de acopio Tlanepantla",
     participants: "3",
     totalParticipants: "4",
-    image: require("../../assets/images/actividad1.jpg"),
+    image: require("../../../../assets/images/actividad1.jpg"),
   },
   {
     id: "2",
@@ -41,7 +36,7 @@ const activities: Activity[] = [
     location: "centro de acopio Toluca",
     participants: "6",
     totalParticipants: "8",
-    image: require("../../assets/images/actividad2.jpeg"),
+    image: require("../../../../assets/images/actividad2.jpeg"),
   },
   {
     id: "3",
@@ -49,7 +44,7 @@ const activities: Activity[] = [
     location: "centro de acopio San Juan de Ocotán",
     participants: "1",
     totalParticipants: "2",
-    image: require("../../assets/images/actividad3.jpeg"),
+    image: require("../../../../assets/images/actividad3.jpeg"),
   },
   {
     id: "4",
@@ -57,12 +52,17 @@ const activities: Activity[] = [
     location: "centro de acopio",
     participants: "0",
     totalParticipants: "6",
-    image: require("../../assets/images/actividad1.jpg"),
+    image: require("../../../../assets/images/actividad1.jpg"),
   },
 ];
 
 export default function HomePage() {
-  const navigation = useNavigation<HomePageNavigationProp>();
+  type RootStackParamList = {
+    Home: undefined;
+    ActivityDetail: { item: Activity };
+  };
+
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   return (
     <View style={styles.container}>

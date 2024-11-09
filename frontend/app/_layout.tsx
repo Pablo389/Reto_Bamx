@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import "react-native-reanimated";
 import { SessionProvider, useSession } from "../hooks/ctx";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { Slot } from "expo-router";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -33,26 +34,8 @@ export default function RootLayout() {
   return (
     <SessionProvider>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <AuthNavigator />
+        <Slot />
       </ThemeProvider>
     </SessionProvider>
-  );
-}
-
-function AuthNavigator() {
-  const { session, isLoading } = useSession();
-
-  console.log("Session:", session);
-  console.log("Is Loading:", isLoading);
-
-  return (
-    <RouterStack>
-      {session ? (
-        <RouterStack.Screen name="(tabs)" options={{ headerShown: false }} />
-      ) : (
-        <RouterStack.Screen name="sign-in" options={{ headerShown: false }} />
-      )}
-      <RouterStack.Screen name="+not-found" />
-    </RouterStack>
   );
 }
