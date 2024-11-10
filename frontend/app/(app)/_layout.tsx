@@ -19,7 +19,7 @@ export default function AppLayout() {
     return <Redirect href="/sign-in" />;
   }
 
-  console.log("Session:", session);
+  // console.log("Session:", session);
   // This layout can be deferred because it's not the root layout.
   return <Stack />;
 }
