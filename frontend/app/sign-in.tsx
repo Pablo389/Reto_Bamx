@@ -12,22 +12,29 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useSession } from "@/hooks/ctx";
 import { router } from "expo-router";
 import { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginScreen() {
   const { signIn } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     console.log("Email:", email, "password:", password);
     signIn(email, password)
-      .then(() => {
-        router.replace("/"); // Navigate to the home screen after sign-in
+      .then(async () => {
+        try {
+          await AsyncStorage.setItem("@user_logged_in", "true");
+        } catch (error) {
+          console.error("Error al guardar el estado de inicio de sesión:", error);
+        }
+        router.replace("/");
       })
       .catch((error) => {
         console.error("Failed to sign in:", error);
       });
   };
+
   return (
     <View style={styles.container}>
       {/* Logo */}
@@ -104,7 +111,7 @@ export default function LoginScreen() {
       {/* Register */}
       <View style={styles.registerContainer}>
         <Text style={styles.registerText}>Eres nuevo?</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/register')}>
           <Text style={styles.registerLink}> Regístrate</Text>
         </TouchableOpacity>
       </View>

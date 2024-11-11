@@ -1,18 +1,12 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
+// app/_layout.tsx
 import { useFonts } from "expo-font";
-import { Stack as RouterStack } from "expo-router"; // Use only this Stack
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
-import "react-native-reanimated";
-import { SessionProvider, useSession } from "../hooks/ctx";
+import { useEffect, useState } from "react";
+import { SessionProvider } from "../hooks/ctx";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { Slot } from "expo-router";
+import { Slot, usePathname, useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -21,21 +15,52 @@ export default function RootLayout() {
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasUserLoggedIn, setHasUserLoggedIn] = useState(false);
 
-  if (!loaded) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkUserLoggedIn = async () => {
+      try {
+        const value = await AsyncStorage.getItem("@user_logged_in");
+        setHasUserLoggedIn(value === "true");
+      } catch (error) {
+        console.error(
+          "Error al verificar si el usuario ha iniciado sesión:",
+          error
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkUserLoggedIn();
+  }, [pathname]); // Mantén 'pathname' como dependencia
+
+  useEffect(() => {
+    if (loaded && !isLoading) {
+      SplashScreen.hideAsync();
+
+      if (
+        !hasUserLoggedIn &&
+        pathname !== "/onboarding" &&
+        pathname !== "/sign-in"
+      ) {
+        // Permite acceso a '/onboarding' y '/sign-in'
+        router.replace("/onboarding");
+      }
+    }
+  }, [loaded, isLoading, hasUserLoggedIn, pathname]);
+
+  if (!loaded || isLoading) {
     return null;
   }
 
   return (
     <SessionProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Slot />
-      </ThemeProvider>
+      <Slot />
     </SessionProvider>
   );
 }
