@@ -32,7 +32,7 @@ export default function UserProfileScreen() {
   const [docId, setDocId] = useState(null); // Para almacenar el ID del documento
 
   useEffect(() => { 
-    if (session && session.email) {
+    if (session) {
       fetchUserData(user.email);
     } else {
       Alert.alert('Error', 'Usuario no autenticado');
