@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,22 +8,31 @@ import {
   ScrollView,
   Alert,
   Modal,
-} from 'react-native';
-import { ArrowLeft, Calendar, ChevronDown } from 'lucide-react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
-import { auth, db } from '../../../config/firebaseConfig';
-import { router } from 'expo-router';
-import { useSession } from '@/hooks/ctx';
+} from "react-native";
+import { ArrowLeft, Calendar, ChevronDown } from "lucide-react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
+import { auth, db } from "../../../config/firebaseConfig";
+import { router } from "expo-router";
+import { useSession } from "@/hooks/ctx";
 
 export default function UserProfileScreen() {
   const { session, signOut } = useSession();
+  const { email } = useSession();
+  console.log(email);
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
+    name: "",
+    phone: "",
     birthday: new Date(),
-    gender: '',
-    address: '',
+    gender: "",
+    address: "",
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [genderModalVisible, setGenderModalVisible] = useState(false);
@@ -31,25 +40,25 @@ export default function UserProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [docId, setDocId] = useState(null); // Para almacenar el ID del documento
 
-  useEffect(() => { 
+  useEffect(() => {
     if (session) {
-      fetchUserData(user.email);
+      console.log("Usuario autenticado:", email);
     } else {
-      Alert.alert('Error', 'Usuario no autenticado');
-      router.replace('/sign-in');
+      Alert.alert("Error", "Usuario no autenticado");
+      router.replace("/sign-in");
     }
   }, []);
 
-  const fetchUserData = async (email) => {
+  const fetchUserData = async (email: string) => {
     if (!email) {
-      console.error('El email es undefined');
-      Alert.alert('Error', 'No se pudo obtener el email del usuario');
+      console.error("El email es undefined");
+      Alert.alert("Error", "No se pudo obtener el email del usuario");
       return;
     }
 
     try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('email', '==', email));
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", email));
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
@@ -58,38 +67,40 @@ export default function UserProfileScreen() {
         setDocId(userDoc.id); // Guardar el ID del documento para futuras actualizaciones
 
         setFormData({
-          name: userData.name || '',
-          phone: userData.phone || '',
-          birthday: userData.birthday ? new Date(userData.birthday) : new Date(),
-          gender: userData.gender || '',
-          address: userData.address || '',
+          name: userData.name || "",
+          phone: userData.phone || "",
+          birthday: userData.birthday
+            ? new Date(userData.birthday)
+            : new Date(),
+          gender: userData.gender || "",
+          address: userData.address || "",
         });
       } else {
-        Alert.alert('Error', 'No se encontraron datos del usuario');
+        Alert.alert("Error", "No se encontraron datos del usuario");
       }
     } catch (error) {
-      console.error('Error al obtener datos del usuario:', error);
-      Alert.alert('Error', 'No se pudieron cargar los datos del usuario');
+      console.error("Error al obtener datos del usuario:", error);
+      Alert.alert("Error", "No se pudieron cargar los datos del usuario");
     }
   };
 
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
-      setFormData(prev => ({ ...prev, birthday: selectedDate }));
+      setFormData((prev) => ({ ...prev, birthday: selectedDate }));
     }
   };
 
   const formatDate = (date) => {
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit'
+    return date.toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
     });
   };
 
   const handleGenderSelect = (gender) => {
-    setFormData(prev => ({ ...prev, gender }));
+    setFormData((prev) => ({ ...prev, gender }));
     setGenderModalVisible(false);
   };
 
@@ -107,13 +118,13 @@ export default function UserProfileScreen() {
 
   const handleSave = async () => {
     if (!docId) {
-      Alert.alert('Error', 'No se pudo identificar el documento del usuario');
+      Alert.alert("Error", "No se pudo identificar el documento del usuario");
       return;
     }
 
     setLoading(true);
     try {
-      await updateDoc(doc(db, 'users', docId), {
+      await updateDoc(doc(db, "users", docId), {
         name: formData.name,
         phone: formData.phone,
         birthday: formData.birthday.toISOString(),
@@ -122,11 +133,11 @@ export default function UserProfileScreen() {
         updatedAt: new Date().toISOString(),
       });
 
-      Alert.alert('Éxito', 'Perfil actualizado correctamente');
+      Alert.alert("Éxito", "Perfil actualizado correctamente");
       setIsEditing(false);
     } catch (error) {
-      console.error('Error al actualizar:', error);
-      Alert.alert('Error', 'No se pudo actualizar el perfil');
+      console.error("Error al actualizar:", error);
+      Alert.alert("Error", "No se pudo actualizar el perfil");
     } finally {
       setLoading(false);
     }
@@ -142,7 +153,8 @@ export default function UserProfileScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Perfil</Text>
         <Text style={styles.infoText}>
-          Nota: El correo electrónico y la contraseña no se pueden modificar aquí.
+          Nota: El correo electrónico y la contraseña no se pueden modificar
+          aquí.
         </Text>
       </View>
 
@@ -153,7 +165,9 @@ export default function UserProfileScreen() {
             style={styles.input}
             placeholder="Nombre"
             value={formData.name}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+            onChangeText={(text) =>
+              setFormData((prev) => ({ ...prev, name: text }))
+            }
             editable={isEditing}
           />
         </View>
@@ -171,7 +185,9 @@ export default function UserProfileScreen() {
               placeholder="(331) 538-4179"
               keyboardType="phone-pad"
               value={formData.phone}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, phone: text }))}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, phone: text }))
+              }
               editable={isEditing}
             />
           </View>
@@ -200,7 +216,7 @@ export default function UserProfileScreen() {
               disabled={!isEditing}
             >
               <Text style={styles.genderText}>
-                {formData.gender || 'Seleccionar'}
+                {formData.gender || "Seleccionar"}
               </Text>
               {isEditing && <ChevronDown size={20} color="#666" />}
             </TouchableOpacity>
@@ -213,7 +229,9 @@ export default function UserProfileScreen() {
             style={styles.input}
             placeholder="Dirección"
             value={formData.address}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, address: text }))}
+            onChangeText={(text) =>
+              setFormData((prev) => ({ ...prev, address: text }))
+            }
             editable={isEditing}
           />
         </View>
@@ -226,7 +244,7 @@ export default function UserProfileScreen() {
               disabled={loading}
             >
               <Text style={styles.saveButtonText}>
-                {loading ? 'Guardando...' : 'Guardar Cambios'}
+                {loading ? "Guardando..." : "Guardar Cambios"}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -238,10 +256,7 @@ export default function UserProfileScreen() {
             </TouchableOpacity>
           </>
         ) : (
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={handleEdit}
-          >
+          <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
             <Text style={styles.editButtonText}>Editar Perfil</Text>
           </TouchableOpacity>
         )}
@@ -260,13 +275,13 @@ export default function UserProfileScreen() {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <TouchableOpacity onPress={() => handleGenderSelect('Hombre')}>
+            <TouchableOpacity onPress={() => handleGenderSelect("Hombre")}>
               <Text style={styles.modalOption}>Hombre</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleGenderSelect('Mujer')}>
+            <TouchableOpacity onPress={() => handleGenderSelect("Mujer")}>
               <Text style={styles.modalOption}>Mujer</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleGenderSelect('Otro')}>
+            <TouchableOpacity onPress={() => handleGenderSelect("Otro")}>
               <Text style={styles.modalOption}>Otro</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setGenderModalVisible(false)}>
@@ -292,21 +307,21 @@ const styles = StyleSheet.create({
   // Tus estilos existentes
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
   },
   header: {
     padding: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   infoText: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginTop: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   form: {
     padding: 20,
@@ -316,46 +331,46 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 8,
-    color: '#000',
+    color: "#000",
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#666',
-    borderColor: '#f5f5f5',
+    color: "#666",
+    borderColor: "#f5f5f5",
     borderWidth: 1,
   },
   phoneContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   countryCode: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     width: 80,
-    textAlign: 'center',
-    borderColor: '#f5f5f5',
+    textAlign: "center",
+    borderColor: "#f5f5f5",
     borderWidth: 1,
   },
   phoneInput: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     flex: 1,
-    borderColor: '#f5f5f5',
+    borderColor: "#f5f5f5",
     borderWidth: 1,
   },
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginBottom: 20,
   },
@@ -364,108 +379,108 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   dateInput: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderColor: '#f5f5f5',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderColor: "#f5f5f5",
     borderWidth: 1,
   },
   dateText: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   genderInput: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderColor: '#f5f5f5',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderColor: "#f5f5f5",
     borderWidth: 1,
   },
   genderText: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   editButton: {
-    backgroundColor: '#B33E3E',
+    backgroundColor: "#B33E3E",
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
   },
   editButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   saveButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
   },
   saveButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   cancelButton: {
-    backgroundColor: '#B33E3E',
+    backgroundColor: "#B33E3E",
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
   },
   cancelButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   disabledButton: {
     opacity: 0.7,
   },
   signOutButton: {
-    backgroundColor: '#D32F2F',
+    backgroundColor: "#D32F2F",
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
   },
   signOutButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   // Estilos para el modal
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 22,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 20,
-    width: '80%',
-    alignItems: 'center',
+    width: "80%",
+    alignItems: "center",
   },
   modalOption: {
     fontSize: 18,
     paddingVertical: 10,
-    textAlign: 'center',
+    textAlign: "center",
   },
   modalCancel: {
     fontSize: 18,
     paddingVertical: 10,
-    textAlign: 'center',
-    color: '#B33E3E',
+    textAlign: "center",
+    color: "#B33E3E",
   },
 });
