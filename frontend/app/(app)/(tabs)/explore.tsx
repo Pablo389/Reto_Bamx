@@ -7,6 +7,7 @@ import {
   FlatList,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import MapView from "react-native-maps";
 
 export default function RouteScreen() {
   const steps = [
@@ -18,13 +19,7 @@ export default function RouteScreen() {
     <View style={styles.container}>
       {/* Map Section */}
       <View style={styles.mapContainer}>
-        <View style={styles.map}>
-          {/* Placeholder for the map */}
-          <MaterialCommunityIcons name="car" size={32} color="#FFFFFF" />
-          <View style={styles.calculatingRoute}>
-            <Text style={styles.calculatingRouteText}>Calculando ruta</Text>
-          </View>
-        </View>
+        <MapView style={styles.map} />
       </View>
 
       {/* Route Information */}

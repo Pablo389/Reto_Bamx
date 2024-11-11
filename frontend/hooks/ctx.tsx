@@ -8,6 +8,7 @@ import {
 import { useStorageState } from "./useStorageState";
 import signIn from "@/config/auth";
 import { IdTokenResult } from "firebase/auth";
+import { Session } from "@/constants/types";
 
 const AuthContext = createContext<{
   signIn: (email: string, password: string) => Promise<void>;
