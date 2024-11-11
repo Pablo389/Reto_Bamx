@@ -1,4 +1,4 @@
-// app/_layout.tsx
+// app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
 import React from "react";
 import { TabBarIcon } from "@/components/navigation/TabBarIcon";
