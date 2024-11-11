@@ -9,6 +9,10 @@ export default function HomeLayout() {
         name="ActivityDetail"
         options={{ title: "Activity Detail" }}
       />
+      <Stack.Screen
+        name="riskSituation" // Changed to "riskSituation" to match the navigation call
+        options={{ title: "Risk Situation" }}
+      />
     </Stack>
   );
 }

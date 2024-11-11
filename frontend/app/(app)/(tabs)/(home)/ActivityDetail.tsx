@@ -6,11 +6,16 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  SafeAreaView,
+  Platform,
+  StatusBar,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { RouteProp } from "@react-navigation/native";
 import { RootStackParamList } from "../../../../constants/types";
+import { LinearGradient } from "expo-linear-gradient";
 
 type ActivityDetailRouteProp = RouteProp<RootStackParamList, "ActivityDetail">;
 
@@ -18,58 +23,145 @@ export default function ActivityDetailScreen() {
   const route = useRoute<ActivityDetailRouteProp>();
   const navigation = useNavigation();
   const { item } = route.params;
+  const scrollY = new Animated.Value(0);
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Animated Header Background */}
+      <Animated.View
+        style={[styles.headerBackground, { opacity: headerOpacity }]}
+      />
+
+      {/* Header */}
       <View style={styles.header}>
-        <Ionicons
-          name="arrow-back"
-          size={24}
-          color="#FFFFFF"
+        <TouchableOpacity
+          style={styles.backButton}
           onPress={() => navigation.goBack()}
-        />
-        <Text style={styles.headerTitle}>{item.title}</Text>
+        >
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Animated.Text style={[styles.headerTitle, { opacity: headerOpacity }]}>
+          {item.title}
+        </Animated.Text>
       </View>
 
-      {/* Make content scrollable */}
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.card}>
-          <Image source={item.image} style={styles.cardImage} />
-          <Text style={styles.description}>
-            Transporte de insumos al banco de comida para asegurar distribución
-            eficiente y oportuna de alimentos a quienes más lo necesitan.
-          </Text>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Ubicación</Text>
-            <Text style={styles.detailValue}>{item.location}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Beneficiados</Text>
-            <Text style={styles.detailValue}>55 personas</Text>
-          </View>
-          <View style={styles.participantRow}>
-            <View style={styles.participantCircle}>
-              <Text style={styles.participantCount}>
-                {item.participants}/{item.totalParticipants}
-              </Text>
-              <Text style={styles.participantLabel}>Participantes</Text>
+      <Animated.ScrollView
+        contentContainerStyle={styles.scrollContent}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
+      >
+        <View style={styles.heroSection}>
+          <Image source={item.image} style={styles.heroImage} />
+          <LinearGradient
+            colors={["transparent", "rgba(26, 26, 26, 0.8)", "#1A1A1A"]}
+            style={styles.heroGradient}
+          />
+          <View style={styles.heroContent}>
+            <View style={styles.tagContainer}>
+              <View style={styles.tag}>
+                <Ionicons name="time-outline" size={16} color="#FFFFFF" />
+                <Text style={styles.tagText}>Urgente</Text>
+              </View>
             </View>
-            <View style={styles.delayCircle}>
-              <Text style={styles.delayCount}>6</Text>
-              <Text style={styles.delayLabel}>Tiempo de desvío</Text>
-            </View>
-          </View>
-          <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.likeButton}>
-              <Ionicons name="heart-outline" size={24} color="#D32F2F" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.applyButton}>
-              <Text style={styles.applyButtonText}>APLICAR</Text>
-            </TouchableOpacity>
+            <Text style={styles.heroTitle}>{item.title}</Text>
           </View>
         </View>
-      </ScrollView>
-    </View>
+
+        <View style={styles.content}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Descripción</Text>
+            <Text style={styles.description}>
+              Transporte de insumos al banco de comida para asegurar
+              distribución eficiente y oportuna de alimentos a quienes más lo
+              necesitan.
+            </Text>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Detalles</Text>
+            <View style={styles.detailsCard}>
+              <View style={styles.detailRow}>
+                <View style={styles.detailItem}>
+                  <Ionicons name="location-outline" size={20} color="#666666" />
+                  <View>
+                    <Text style={styles.detailLabel}>Ubicación</Text>
+                    <Text style={styles.detailValue}>{item.location}</Text>
+                  </View>
+                </View>
+                <View style={styles.detailItem}>
+                  <Ionicons name="people-outline" size={20} color="#666666" />
+                  <View>
+                    <Text style={styles.detailLabel}>Beneficiados</Text>
+                    <Text style={styles.detailValue}>55 personas</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.statsSection}>
+            <View style={styles.statCard}>
+              <View style={styles.statHeader}>
+                <Text style={styles.statTitle}>Participantes</Text>
+                <View style={styles.statBadge}>
+                  <Text style={styles.statBadgeText}>Espacios disponibles</Text>
+                </View>
+              </View>
+              <View style={styles.statContent}>
+                <Text style={styles.statNumber}>
+                  {item.participants}/{item.totalParticipants}
+                </Text>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${
+                          (parseInt(item.participants) /
+                            parseInt(item.totalParticipants)) *
+                          100
+                        }%`,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.statCard}>
+              <View style={styles.statHeader}>
+                <Text style={styles.statTitle}>Tiempo de desvío</Text>
+                <View style={[styles.statBadge, styles.timeBadge]}>
+                  <Text style={styles.statBadgeText}>Minutos aprox.</Text>
+                </View>
+              </View>
+              <Text style={[styles.statNumber, styles.timeNumber]}>6</Text>
+            </View>
+          </View>
+        </View>
+      </Animated.ScrollView>
+
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.likeButton}>
+          <Ionicons name="heart-outline" size={24} color="#D32F2F" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.applyButton} activeOpacity={0.8}>
+          <Text style={styles.applyButtonText}>APLICAR AHORA</Text>
+          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -78,99 +170,215 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#1A1A1A",
   },
+  headerBackground: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    backgroundColor: "#1A1A1A",
+    zIndex: 1,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
-    backgroundColor: "#1A1A1A",
+    padding: 16,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "600",
     color: "#FFFFFF",
-    marginLeft: 10,
+    marginLeft: 12,
   },
   scrollContent: {
-    paddingBottom: 20, // Optional padding to ensure all content is visible
+    paddingBottom: 100,
   },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 10,
-    margin: 20,
-    padding: 15,
+  heroSection: {
+    height: 400,
+    position: "relative",
   },
-  cardImage: {
+  heroImage: {
     width: "100%",
+    height: "100%",
+  },
+  heroGradient: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     height: 200,
-    borderRadius: 10,
+  },
+  heroContent: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+  },
+  tagContainer: {
+    flexDirection: "row",
+    marginBottom: 8,
+  },
+  tag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#D32F2F",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+  },
+  tagText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  heroTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  content: {
+    padding: 20,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    marginBottom: 12,
   },
   description: {
-    fontSize: 14,
-    color: "#666666",
-    marginVertical: 15,
+    fontSize: 16,
+    lineHeight: 24,
+    color: "#CCCCCC",
+  },
+  detailsCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 16,
+    padding: 16,
   },
   detailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 5,
+  },
+  detailItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   detailLabel: {
-    fontSize: 14,
-    color: "#666666",
+    fontSize: 12,
+    color: "#999999",
+    marginBottom: 4,
   },
   detailValue: {
     fontSize: 14,
-    fontWeight: "bold",
-    color: "#333333",
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
-  participantRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginVertical: 15,
+  statsSection: {
+    gap: 16,
   },
-  participantCircle: {
-    alignItems: "center",
+  statCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 16,
+    padding: 16,
   },
-  delayCircle: {
-    alignItems: "center",
-  },
-  participantCount: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#D32F2F",
-  },
-  participantLabel: {
-    fontSize: 12,
-    color: "#666666",
-  },
-  delayCount: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#D32F2F",
-  },
-  delayLabel: {
-    fontSize: 12,
-    color: "#666666",
-  },
-  buttonRow: {
+  statHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  statTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  statBadge: {
+    backgroundColor: "#D32F2F",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  timeBadge: {
+    backgroundColor: "#2196F3",
+  },
+  statBadgeText: {
+    fontSize: 12,
+    color: "#FFFFFF",
+  },
+  statContent: {
+    gap: 8,
+  },
+  statNumber: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#D32F2F",
+  },
+  timeNumber: {
+    color: "#2196F3",
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: "rgba(211, 47, 47, 0.2)",
+    borderRadius: 2,
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#D32F2F",
+    borderRadius: 2,
+  },
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    gap: 12,
+    padding: 16,
+    backgroundColor: "#1A1A1A",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.1)",
   },
   likeButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: "#D32F2F",
-    borderRadius: 8,
-    padding: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
   applyButton: {
+    flex: 1,
+    height: 48,
     backgroundColor: "#D32F2F",
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    borderRadius: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   applyButtonText: {
     color: "#FFFFFF",
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
