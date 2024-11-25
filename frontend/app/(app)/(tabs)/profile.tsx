@@ -25,8 +25,6 @@ import { useSession } from "@/hooks/ctx";
 
 export default function UserProfileScreen() {
   const { session, signOut } = useSession();
-  const { email } = useSession();
-  console.log(email);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -42,14 +40,14 @@ export default function UserProfileScreen() {
 
   useEffect(() => {
     if (session) {
-      console.log("Usuario autenticado:", email);
+      fetchUserData(user.email);
     } else {
       Alert.alert("Error", "Usuario no autenticado");
       router.replace("/sign-in");
     }
   }, []);
 
-  const fetchUserData = async (email: string) => {
+  const fetchUserData = async (email) => {
     if (!email) {
       console.error("El email es undefined");
       Alert.alert("Error", "No se pudo obtener el email del usuario");
