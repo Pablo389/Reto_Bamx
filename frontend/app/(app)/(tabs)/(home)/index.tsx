@@ -66,7 +66,7 @@ export default function HomePage() {
   type RootStackParamList = {
     Home: undefined;
     ActivityDetail: { item: Activity };
-    riskSituation: undefined;
+    "(riskSituation)": undefined;
   };
 
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -141,7 +141,7 @@ export default function HomePage() {
             {isRiskSituation && (
               <TouchableOpacity
                 style={styles.alertCard}
-                onPress={() => navigation.navigate("riskSituation")}
+                onPress={() => navigation.navigate("(riskSituation)")}
                 activeOpacity={0.95}
               >
                 <View style={styles.alertContent}>

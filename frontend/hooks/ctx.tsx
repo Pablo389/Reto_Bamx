@@ -14,11 +14,13 @@ const AuthContext = createContext<{
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => void;
   session?: string | null;
+  email?: string | null;
   isLoading: boolean;
 }>({
   signIn: async () => {},
   signOut: () => null,
   session: null,
+  email: null,
   isLoading: false,
 });
 
@@ -35,6 +37,7 @@ export function useSession() {
 
 export function SessionProvider({ children }: PropsWithChildren) {
   const [[isLoading, session], setSession] = useStorageState("session");
+  const [email, setEmail] = useStorageState("email");
 
   const signInHandler = async (email: string, password: string) => {
     const result = await signIn(email, password);
@@ -47,7 +50,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
         signInProvider,
         signInSecondFactor,
       }: IdTokenResult = await result.userSession.token;
-
+      setEmail(result.userSession.email);
       setSession(token);
     } else {
       console.error("Sign-in failed:", result.error);
@@ -62,6 +65,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
           setSession(null);
         },
         session,
+        email: email[1],
         isLoading,
       }}
     >
