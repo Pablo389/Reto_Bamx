@@ -26,8 +26,6 @@ import { useSession } from "@/hooks/ctx";
 
 export default function UserProfileScreen() {
   const { session, signOut } = useSession();
-  const { email } = useSession();
-  console.log(email);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -84,7 +82,42 @@ export default function UserProfileScreen() {
       Alert.alert("Error", "Usuario no autenticado");
       router.replace("/sign-in");
     }
-  }, [session]);
+  }, []);
+
+  const fetchUserData = async (email) => {
+    if (!email) {
+      console.error("El email es undefined");
+      Alert.alert("Error", "No se pudo obtener el email del usuario");
+      return;
+    }
+
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        const userData = userDoc.data();
+        setDocId(userDoc.id); // Guardar el ID del documento para futuras actualizaciones
+
+        setFormData({
+          name: userData.name || "",
+          phone: userData.phone || "",
+          birthday: userData.birthday
+            ? new Date(userData.birthday)
+            : new Date(),
+          gender: userData.gender || "",
+          address: userData.address || "",
+        });
+      } else {
+        Alert.alert("Error", "No se encontraron datos del usuario");
+      }
+    } catch (error) {
+      console.error("Error al obtener datos del usuario:", error);
+      Alert.alert("Error", "No se pudieron cargar los datos del usuario");
+    }
+  };
 
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);

@@ -14,8 +14,8 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 
 type RootStackParamList = {
-  Donar: undefined;
-  Voluntario: undefined;
+  "(donar)": undefined;
+  "(voluntario)": undefined;
 };
 
 export default function RiskSituation() {
@@ -45,11 +45,11 @@ export default function RiskSituation() {
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.navigate("Donar")}
+            onPress={() => navigation.navigate("(donar)")}
             activeOpacity={0.9}
           >
             <Image
-              source={require("../../../../assets/images/donar.jpeg")}
+              source={require("../../../../../assets/images/donar.jpeg")}
               style={styles.buttonImage}
             />
             <View style={styles.overlay}>
@@ -65,11 +65,11 @@ export default function RiskSituation() {
 
           <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.navigate("Voluntario")}
+            onPress={() => navigation.navigate("(voluntario)")}
             activeOpacity={0.9}
           >
             <Image
-              source={require("../../../../assets/images/voluntario.jpeg")}
+              source={require("../../../../../assets/images/voluntario.jpeg")}
               style={styles.buttonImage}
             />
             <View style={styles.overlay}>

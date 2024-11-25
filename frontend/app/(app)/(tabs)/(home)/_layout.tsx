@@ -1,4 +1,3 @@
-// app/(home)/_layout.tsx
 import { Stack } from "expo-router";
 
 export default function HomeLayout() {
@@ -10,7 +9,7 @@ export default function HomeLayout() {
         options={{ title: "Activity Detail" }}
       />
       <Stack.Screen
-        name="riskSituation" // Changed to "riskSituation" to match the navigation call
+        name="(riskSituation)"
         options={{ title: "Risk Situation" }}
       />
     </Stack>
