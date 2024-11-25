@@ -9,7 +9,7 @@ import {
   Alert,
   Modal,
 } from "react-native";
-import { ArrowLeft, Calendar, ChevronDown } from "lucide-react-native";
+import { Calendar, ChevronDown } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   collection,
@@ -18,6 +18,7 @@ import {
   getDocs,
   updateDoc,
   doc,
+  getDoc,
 } from "firebase/firestore";
 import { auth, db } from "../../../config/firebaseConfig";
 import { router } from "expo-router";
@@ -41,48 +42,49 @@ export default function UserProfileScreen() {
   const [docId, setDocId] = useState(null); // Para almacenar el ID del documento
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      if (!email) {
+        console.error("El email es undefined");
+        Alert.alert("Error", "No se pudo obtener el email del usuario");
+        return;
+      }
+
+      try {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", email));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const userDoc = querySnapshot.docs[0];
+          const userData = userDoc.data();
+          setDocId(userDoc.id); // Guardar el ID del documento para futuras actualizaciones
+
+          setFormData({
+            name: userData.name || "",
+            phone: userData.phone || "",
+            birthday: userData.birthday
+              ? new Date(userData.birthday)
+              : new Date(),
+            gender: userData.gender || "",
+            address: userData.address || "",
+          });
+        } else {
+          Alert.alert("Error", "No se encontraron datos del usuario");
+        }
+      } catch (error) {
+        console.error("Error al obtener datos del usuario:", error);
+        Alert.alert("Error", "No se pudieron cargar los datos del usuario");
+      }
+    };
+
     if (session) {
       console.log("Usuario autenticado:", email);
+      fetchUserData();
     } else {
       Alert.alert("Error", "Usuario no autenticado");
       router.replace("/sign-in");
     }
-  }, []);
-
-  const fetchUserData = async (email: string) => {
-    if (!email) {
-      console.error("El email es undefined");
-      Alert.alert("Error", "No se pudo obtener el email del usuario");
-      return;
-    }
-
-    try {
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        const userDoc = querySnapshot.docs[0];
-        const userData = userDoc.data();
-        setDocId(userDoc.id); // Guardar el ID del documento para futuras actualizaciones
-
-        setFormData({
-          name: userData.name || "",
-          phone: userData.phone || "",
-          birthday: userData.birthday
-            ? new Date(userData.birthday)
-            : new Date(),
-          gender: userData.gender || "",
-          address: userData.address || "",
-        });
-      } else {
-        Alert.alert("Error", "No se encontraron datos del usuario");
-      }
-    } catch (error) {
-      console.error("Error al obtener datos del usuario:", error);
-      Alert.alert("Error", "No se pudieron cargar los datos del usuario");
-    }
-  };
+  }, [session]);
 
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
@@ -90,6 +92,8 @@ export default function UserProfileScreen() {
       setFormData((prev) => ({ ...prev, birthday: selectedDate }));
     }
   };
+
+  console.log(formData)
 
   const formatDate = (date) => {
     return date.toLocaleDateString("es-ES", {
@@ -111,7 +115,7 @@ export default function UserProfileScreen() {
   const handleCancel = () => {
     // Revertir cambios y desactivar modo edición
     if (session) {
-      fetchUserData(session.email);
+      // fetchUserData(email);
     }
     setIsEditing(false);
   };
@@ -144,7 +148,7 @@ export default function UserProfileScreen() {
   };
 
   const handleSignOut = () => {
-    auth.signOut();
+    signOut();
     router.replace("/sign-in");
   };
 
@@ -164,7 +168,7 @@ export default function UserProfileScreen() {
           <TextInput
             style={styles.input}
             placeholder="Nombre"
-            value={formData.name}
+            value={formData.name}  // Establece el valor del campo "name" en el input
             onChangeText={(text) =>
               setFormData((prev) => ({ ...prev, name: text }))
             }
@@ -184,7 +188,7 @@ export default function UserProfileScreen() {
               style={styles.phoneInput}
               placeholder="(331) 538-4179"
               keyboardType="phone-pad"
-              value={formData.phone}
+              value={formData.phone}  // Establece el valor del campo "phone" en el input
               onChangeText={(text) =>
                 setFormData((prev) => ({ ...prev, phone: text }))
               }
@@ -194,20 +198,6 @@ export default function UserProfileScreen() {
         </View>
 
         <View style={styles.row}>
-          <View style={[styles.inputGroup, styles.halfWidth]}>
-            <Text style={styles.label}>Cumpleaños</Text>
-            <TouchableOpacity
-              style={styles.dateInput}
-              onPress={() => isEditing && setShowDatePicker(true)}
-              disabled={!isEditing}
-            >
-              <Text style={styles.dateText}>
-                {formatDate(formData.birthday)}
-              </Text>
-              {isEditing && <Calendar size={20} color="#666" />}
-            </TouchableOpacity>
-          </View>
-
           <View style={[styles.inputGroup, styles.halfWidth]}>
             <Text style={styles.label}>Género</Text>
             <TouchableOpacity
@@ -228,14 +218,13 @@ export default function UserProfileScreen() {
           <TextInput
             style={styles.input}
             placeholder="Dirección"
-            value={formData.address}
+            value={formData.address}  // Establece el valor del campo "address" en el input
             onChangeText={(text) =>
               setFormData((prev) => ({ ...prev, address: text }))
             }
             editable={isEditing}
-          />
+         />
         </View>
-
         {isEditing ? (
           <>
             <TouchableOpacity
@@ -407,14 +396,16 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   editButton: {
-    backgroundColor: "#B33E3E",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 16,
     alignItems: "center",
     marginTop: 20,
+    borderColor: "#B33E3E",
+    borderWidth: 1,
   },
   editButtonText: {
-    color: "#fff",
+    color: "#666",
     fontSize: 16,
     fontWeight: "600",
   },
