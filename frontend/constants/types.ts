@@ -22,4 +22,5 @@ export type Session = {
   email: string | null;
   id: string;
   token: Promise<IdTokenResult>;
+  role: string;
 };

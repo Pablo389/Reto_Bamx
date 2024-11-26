@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,25 +7,25 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-} from 'react-native';
-import { ArrowLeft, Calendar, ChevronDown } from 'lucide-react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { setDoc, doc } from 'firebase/firestore';
-import { auth, db } from '../config/firebaseConfig';
-import { router } from 'expo-router';
-import { useSession } from '@/hooks/ctx';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+} from "react-native";
+import { ArrowLeft, Calendar, ChevronDown } from "lucide-react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { setDoc, doc } from "firebase/firestore";
+import { auth, db } from "../config/firebaseConfig";
+import { router } from "expo-router";
+import { useSession } from "@/hooks/ctx";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    password: '',
+    name: "",
+    phone: "",
+    email: "",
+    password: "",
     birthday: new Date(),
-    gender: '',
-    address: '',
+    gender: "",
+    address: "",
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGenderPicker, setShowGenderPicker] = useState(false);
@@ -35,25 +35,30 @@ export default function RegisterForm() {
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
-      setFormData(prev => ({ ...prev, birthday: selectedDate }));
+      setFormData((prev) => ({ ...prev, birthday: selectedDate }));
     }
   };
 
   const formatDate = (date) => {
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit'
+    return date.toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
     });
   };
 
   const validateForm = () => {
-    if (!formData.name || !formData.email || !formData.password || !formData.phone) {
-      Alert.alert('Error', 'Por favor, rellena todos los campos obligatorios.');
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.password ||
+      !formData.phone
+    ) {
+      Alert.alert("Error", "Por favor, rellena todos los campos obligatorios.");
       return false;
     }
     if (formData.password.length < 6) {
-      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres.');
+      Alert.alert("Error", "La contraseña debe tener al menos 6 caracteres.");
       return false;
     }
     return true;
@@ -64,35 +69,43 @@ export default function RegisterForm() {
 
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
       const user = userCredential.user;
 
-      await setDoc(doc(db, 'users', user.uid), {
+      await setDoc(doc(db, "users", user.uid), {
         name: formData.name,
         phone: formData.phone,
         birthday: formData.birthday,
         gender: formData.gender,
         address: formData.address,
         createdAt: new Date(),
+        role: "user",
       });
 
-      Alert.alert('Éxito', 'Usuario registrado correctamente');
+      Alert.alert("Éxito", "Usuario registrado correctamente");
       console.log("Email:", formData.email, "password:", formData.password);
       signIn(formData.email, formData.password)
         .then(async () => {
-        try {
+          try {
             await AsyncStorage.setItem("@user_logged_in", "true");
-        } catch (error) {
-            console.error("Error al guardar el estado de inicio de sesión:", error);
-        }
-        router.replace("/");
+          } catch (error) {
+            console.error(
+              "Error al guardar el estado de inicio de sesión:",
+              error
+            );
+          }
+          router.replace("/");
         })
         .catch((error) => {
-        console.error("Failed to sign up:", error);
+          console.error("Failed to sign up:", error);
         });
     } catch (error) {
-      console.error('Error al registrar:', error);
-      Alert.alert('Error', error.message);
+      console.error("Error al registrar:", error);
+      Alert.alert("Error", error.message);
     } finally {
       setLoading(false);
     }
@@ -114,7 +127,9 @@ export default function RegisterForm() {
             style={styles.input}
             placeholder="Ingresa tu nombre"
             value={formData.name}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+            onChangeText={(text) =>
+              setFormData((prev) => ({ ...prev, name: text }))
+            }
           />
         </View>
 
@@ -131,7 +146,9 @@ export default function RegisterForm() {
               placeholder="(331) 538-4179"
               keyboardType="phone-pad"
               value={formData.phone}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, phone: text }))}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, phone: text }))
+              }
             />
           </View>
         </View>
@@ -144,7 +161,9 @@ export default function RegisterForm() {
             keyboardType="email-address"
             autoCapitalize="none"
             value={formData.email}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, email: text }))}
+            onChangeText={(text) =>
+              setFormData((prev) => ({ ...prev, email: text }))
+            }
           />
         </View>
 
@@ -155,7 +174,9 @@ export default function RegisterForm() {
             placeholder="************"
             secureTextEntry
             value={formData.password}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, password: text }))}
+            onChangeText={(text) =>
+              setFormData((prev) => ({ ...prev, password: text }))
+            }
           />
         </View>
 
@@ -180,7 +201,7 @@ export default function RegisterForm() {
               onPress={() => setShowGenderPicker(!showGenderPicker)}
             >
               <Text style={styles.genderText}>
-                {formData.gender || 'Hombre'}
+                {formData.gender || "Hombre"}
               </Text>
               <ChevronDown size={20} color="#666" />
             </TouchableOpacity>
@@ -193,22 +214,24 @@ export default function RegisterForm() {
             style={styles.input}
             placeholder="4202 Glencrest St"
             value={formData.address}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, address: text }))}
+            onChangeText={(text) =>
+              setFormData((prev) => ({ ...prev, address: text }))
+            }
           />
         </View>
 
-        <TouchableOpacity 
-          style={[styles.submitButton, loading && styles.disabledButton]} 
+        <TouchableOpacity
+          style={[styles.submitButton, loading && styles.disabledButton]}
           onPress={handleSubmit}
           disabled={loading}
         >
           <Text style={styles.submitButtonText}>
-            {loading ? 'Registrando...' : 'Registrarse'}
+            {loading ? "Registrando..." : "Registrarse"}
           </Text>
         </TouchableOpacity>
         <View style={styles.loginPrompt}>
           <Text style={styles.loginPromptText}>
-            ¿Ya estás registrado?{' '}
+            ¿Ya estás registrado?{" "}
             <Text style={styles.loginLink} onPress={() => router.back()}>
               Inicia sesión
             </Text>
@@ -231,17 +254,17 @@ export default function RegisterForm() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 16,
   },
   form: {
@@ -252,46 +275,46 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 8,
-    color: '#000',
+    color: "#000",
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#666',
-    borderColor: '#f5f5f5',
+    color: "#666",
+    borderColor: "#f5f5f5",
     borderWidth: 1,
   },
   phoneContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   countryCode: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     width: 80,
-    textAlign: 'center',
-    borderColor: '#f5f5f5',
+    textAlign: "center",
+    borderColor: "#f5f5f5",
     borderWidth: 1,
   },
   phoneInput: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     flex: 1,
-    borderColor: '#f5f5f5',
+    borderColor: "#f5f5f5",
     borderWidth: 1,
   },
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginBottom: 20,
   },
@@ -300,58 +323,58 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   dateInput: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderColor: '#f5f5f5',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderColor: "#f5f5f5",
     borderWidth: 1,
   },
   dateText: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   genderInput: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderColor: '#f5f5f5',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderColor: "#f5f5f5",
     borderWidth: 1,
   },
   genderText: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   submitButton: {
-    backgroundColor: '#B33E3E',
+    backgroundColor: "#B33E3E",
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
   },
   submitButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   disabledButton: {
     opacity: 0.7,
   },
   loginPrompt: {
     marginTop: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   loginPromptText: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   loginLink: {
-    color: '#B33E3E',
-    fontWeight: '600',
+    color: "#B33E3E",
+    fontWeight: "600",
   },
 });

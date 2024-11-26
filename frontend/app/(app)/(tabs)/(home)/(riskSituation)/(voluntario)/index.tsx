@@ -62,7 +62,7 @@ export default function Voluntario() {
           style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color="white" />
-          <Text style={styles.backText}>Home</Text>
+          <Text style={styles.backText}>Ayuda</Text>
         </TouchableOpacity>
       </View>
 
@@ -102,7 +102,8 @@ export default function Voluntario() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#8B1818", // Dark red background matching the image
+    backgroundColor: "#8B1818",
+    paddingTop: 20,
   },
   header: {
     padding: 16,

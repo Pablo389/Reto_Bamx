@@ -5,7 +5,7 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useSession } from "@/hooks/ctx";
 
-export default function TabLayout() {
+export default function AdminLayout() {
   const colorScheme = useColorScheme();
   const { session, role, isLoading } = useSession();
 
@@ -22,7 +22,7 @@ export default function TabLayout() {
     >
       {/* Home Tab */}
       <Tabs.Screen
-        name="(home)"
+        name="index"
         options={{
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
@@ -33,29 +33,25 @@ export default function TabLayout() {
           ),
         }}
       />
-
-      {/* Explore Tab */}
       <Tabs.Screen
-        name="explore"
+        name="(activities)/index"
         options={{
-          title: "Explore",
+          title: "Actividades",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
-              name={focused ? "code-slash" : "code-slash-outline"}
+              name={focused ? "checkmark-done" : "checkmark-done-outline"}
               color={color}
             />
           ),
         }}
       />
-
-      {/* Profile Tab */}
       <Tabs.Screen
-        name="profile"
+        name="(riskSituations)/index"
         options={{
-          title: "Profile",
+          title: "Situaciones de Riesgo",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
-              name={focused ? "person" : "person-outline"}
+              name={focused ? "alert-circle" : "alert-circle-outline"}
               color={color}
             />
           ),

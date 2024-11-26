@@ -25,7 +25,7 @@ import { router } from "expo-router";
 import { useSession } from "@/hooks/ctx";
 
 export default function UserProfileScreen() {
-  const { session, signOut } = useSession();
+  const { session, signOut, email } = useSession();
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -37,7 +37,7 @@ export default function UserProfileScreen() {
   const [genderModalVisible, setGenderModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [docId, setDocId] = useState(null); // Para almacenar el ID del documento
+  const [docId, setDocId] = useState(""); // Para almacenar el ID del documento
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -84,40 +84,40 @@ export default function UserProfileScreen() {
     }
   }, []);
 
-  const fetchUserData = async (email) => {
-    if (!email) {
-      console.error("El email es undefined");
-      Alert.alert("Error", "No se pudo obtener el email del usuario");
-      return;
-    }
+  // const fetchUserData = async (email) => {
+  //   if (!email) {
+  //     console.error("El email es undefined");
+  //     Alert.alert("Error", "No se pudo obtener el email del usuario");
+  //     return;
+  //   }
 
-    try {
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
-      const querySnapshot = await getDocs(q);
+  //   try {
+  //     const usersRef = collection(db, "users");
+  //     const q = query(usersRef, where("email", "==", email));
+  //     const querySnapshot = await getDocs(q);
 
-      if (!querySnapshot.empty) {
-        const userDoc = querySnapshot.docs[0];
-        const userData = userDoc.data();
-        setDocId(userDoc.id); // Guardar el ID del documento para futuras actualizaciones
+  //     if (!querySnapshot.empty) {
+  //       const userDoc = querySnapshot.docs[0];
+  //       const userData = userDoc.data();
+  //       setDocId(userDoc.id); // Guardar el ID del documento para futuras actualizaciones
 
-        setFormData({
-          name: userData.name || "",
-          phone: userData.phone || "",
-          birthday: userData.birthday
-            ? new Date(userData.birthday)
-            : new Date(),
-          gender: userData.gender || "",
-          address: userData.address || "",
-        });
-      } else {
-        Alert.alert("Error", "No se encontraron datos del usuario");
-      }
-    } catch (error) {
-      console.error("Error al obtener datos del usuario:", error);
-      Alert.alert("Error", "No se pudieron cargar los datos del usuario");
-    }
-  };
+  //       setFormData({
+  //         name: userData.name || "",
+  //         phone: userData.phone || "",
+  //         birthday: userData.birthday
+  //           ? new Date(userData.birthday)
+  //           : new Date(),
+  //         gender: userData.gender || "",
+  //         address: userData.address || "",
+  //       });
+  //     } else {
+  //       Alert.alert("Error", "No se encontraron datos del usuario");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error al obtener datos del usuario:", error);
+  //     Alert.alert("Error", "No se pudieron cargar los datos del usuario");
+  //   }
+  // };
 
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
@@ -126,7 +126,7 @@ export default function UserProfileScreen() {
     }
   };
 
-  console.log(formData)
+  console.log(formData);
 
   const formatDate = (date) => {
     return date.toLocaleDateString("es-ES", {
@@ -201,7 +201,7 @@ export default function UserProfileScreen() {
           <TextInput
             style={styles.input}
             placeholder="Nombre"
-            value={formData.name}  // Establece el valor del campo "name" en el input
+            value={formData.name} // Establece el valor del campo "name" en el input
             onChangeText={(text) =>
               setFormData((prev) => ({ ...prev, name: text }))
             }
@@ -221,7 +221,7 @@ export default function UserProfileScreen() {
               style={styles.phoneInput}
               placeholder="(331) 538-4179"
               keyboardType="phone-pad"
-              value={formData.phone}  // Establece el valor del campo "phone" en el input
+              value={formData.phone} // Establece el valor del campo "phone" en el input
               onChangeText={(text) =>
                 setFormData((prev) => ({ ...prev, phone: text }))
               }
@@ -251,12 +251,12 @@ export default function UserProfileScreen() {
           <TextInput
             style={styles.input}
             placeholder="Dirección"
-            value={formData.address}  // Establece el valor del campo "address" en el input
+            value={formData.address} // Establece el valor del campo "address" en el input
             onChangeText={(text) =>
               setFormData((prev) => ({ ...prev, address: text }))
             }
             editable={isEditing}
-         />
+          />
         </View>
         {isEditing ? (
           <>
