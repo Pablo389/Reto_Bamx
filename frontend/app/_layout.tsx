@@ -1,8 +1,7 @@
-// app/_layout.tsx
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
-import { SessionProvider } from "../hooks/ctx";
+import { SessionProvider } from "@/hooks/ctx";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Slot, usePathname, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -17,27 +16,25 @@ export default function RootLayout() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [hasUserLoggedIn, setHasUserLoggedIn] = useState(false);
-
+  const [userRole, setUserRole] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
     const checkUserLoggedIn = async () => {
       try {
-        const value = await AsyncStorage.getItem("@user_logged_in");
-        setHasUserLoggedIn(value === "true");
+        const loggedIn = await AsyncStorage.getItem("@user_logged_in");
+        setHasUserLoggedIn(loggedIn === "true");
+        // setUserRole(role);
       } catch (error) {
-        console.error(
-          "Error al verificar si el usuario ha iniciado sesión:",
-          error
-        );
+        console.error("Error verifying user session or role:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
     checkUserLoggedIn();
-  }, [pathname]); // Mantén 'pathname' como dependencia
+  }, []); // Run only once on mount
 
   useEffect(() => {
     if (loaded && !isLoading) {
@@ -48,7 +45,6 @@ export default function RootLayout() {
         pathname !== "/onboarding" &&
         pathname !== "/sign-in"
       ) {
-        // Permite acceso a '/onboarding' y '/sign-in'
         router.replace("/onboarding");
       }
     }

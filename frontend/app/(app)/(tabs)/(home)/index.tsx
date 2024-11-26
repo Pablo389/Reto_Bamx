@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -14,53 +14,26 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { LinearGradient } from "expo-linear-gradient";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/config/firebaseConfig";
+
+const imageMapper = {
+  "actividad1.jpg": require("../../../../assets/images/actividad1.jpg"),
+  "actividad2.jpeg": require("../../../../assets/images/actividad2.jpeg"),
+};
 
 interface Activity {
   id: string;
   title: string;
-  location: string;
-  participants: string;
-  totalParticipants: string;
-  image: any;
+  location: { name: string; link: string };
+  participants: number;
+  totalParticipants: number;
+  image: keyof typeof imageMapper;
   status?: "urgent" | "active" | "full";
 }
 
-const activities: Activity[] = [
-  {
-    id: "1",
-    title: "Entrega de insumos",
-    location: "centro de acopio Tlanepantla",
-    participants: "3",
-    totalParticipants: "4",
-    image: require("../../../../assets/images/actividad1.jpg"),
-  },
-  {
-    id: "2",
-    title: "Colecta de víveres",
-    location: "centro de acopio Toluca",
-    participants: "6",
-    totalParticipants: "8",
-    image: require("../../../../assets/images/actividad2.jpeg"),
-  },
-  {
-    id: "3",
-    title: "Colecta de víveres",
-    location: "centro de acopio San Juan de Ocotán",
-    participants: "1",
-    totalParticipants: "2",
-    image: require("../../../../assets/images/actividad3.jpeg"),
-  },
-  {
-    id: "4",
-    title: "Entrega de insumos",
-    location: "centro de acopio",
-    participants: "0",
-    totalParticipants: "6",
-    image: require("../../../../assets/images/actividad1.jpg"),
-  },
-];
-
 export default function HomePage() {
+  const [activities, setActivities] = useState<Activity[]>([]);
   const isRiskSituation = true;
 
   type RootStackParamList = {
@@ -70,6 +43,25 @@ export default function HomePage() {
   };
 
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
+  // Fetch activities from Firestore
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(db, "activities"),
+      (snapshot) => {
+        const fetchedActivities: Activity[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<Activity, "id">),
+        }));
+        setActivities(fetchedActivities);
+      },
+      (error) => {
+        console.error("Error fetching activities:", error);
+      }
+    );
+
+    return () => unsubscribe(); // Cleanup listener
+  }, []);
 
   const getStatusColor = (status?: string) => {
     switch (status) {
@@ -90,7 +82,7 @@ export default function HomePage() {
       onPress={() => navigation.navigate("ActivityDetail", { item })}
       activeOpacity={0.9}
     >
-      <Image source={item.image} style={styles.cardImage} />
+      <Image source={imageMapper[item.image]} style={styles.cardImage} />
       <LinearGradient
         colors={["transparent", "rgba(0,0,0,0.8)"]}
         style={styles.cardGradient}
@@ -113,7 +105,7 @@ export default function HomePage() {
             <Text style={styles.cardTitle}>{item.title}</Text>
             <Text style={styles.cardLocation}>
               <Ionicons name="location" size={14} color="#FFFFFF" />
-              {" " + item.location}
+              {" " + item.location.name}
             </Text>
           </View>
           <View style={styles.participantInfo}>
