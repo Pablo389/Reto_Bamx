@@ -16,6 +16,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/config/firebaseConfig";
+import { useSession } from "@/hooks/ctx";
 
 const imageMapper = {
   "actividad1.jpg": require("../../../../assets/images/actividad1.jpg"),
@@ -36,12 +37,15 @@ interface Activity {
 export default function HomePage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const isRiskSituation = true;
+  const { email } = useSession();
 
   type RootStackParamList = {
     Home: undefined;
     ActivityDetail: { item: Activity };
     "(riskSituation)": undefined;
   };
+
+  console.log(email)
 
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
