@@ -4,7 +4,6 @@ export type RootStackParamList = {
   "(tabs)": undefined;
   "sign-in": undefined;
   "+not-found": undefined;
-  "(home)": undefined;
   ActivityDetail: { item: Activity }; // Example for additional screens
 };
 

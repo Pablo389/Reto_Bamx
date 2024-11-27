@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,61 +7,148 @@ import {
   StyleSheet,
   SafeAreaView,
   StatusBar,
+  ActivityIndicator,
+  Platform,
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/config/firebaseConfig";
+
+interface Category {
+  id: number;
+  key: string;
+  title: string;
+  description: string;
+  icon: any;
+}
 
 export default function DonarPage() {
-  const navigation = useNavigation();
-  const categories: {
-    id: number;
-    title: string;
-    description: string;
-    icon: "cash-outline" | "basket-outline" | "bed-outline" | "cube-outline";
-  }[] = [
-    {
+  const router = useRouter();
+  const { riskSituationId } = useLocalSearchParams();
+  const [riskSituation, setRiskSituation] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!riskSituationId) {
+      console.error("No riskSituationId provided");
+      setLoading(false);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        const riskSituationRef = doc(
+          db,
+          "riskSituations",
+          riskSituationId as string
+        );
+        const docSnap = await getDoc(riskSituationRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setRiskSituation({ id: docSnap.id, ...data });
+        } else {
+          console.error("No such riskSituation document!");
+        }
+      } catch (error) {
+        console.error("Error fetching riskSituation:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [riskSituationId]);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+      </View>
+    );
+  }
+
+  if (!riskSituation) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Error loading data.</Text>
+      </View>
+    );
+  }
+
+  const {
+    nombre,
+    donarDinero,
+    donarEsenciales,
+    donarEmergencia,
+    donarEspecie,
+    instruccionesDinero,
+  } = riskSituation;
+
+  // Build categories array based on data
+  const categories: Category[] = [];
+
+  if (donarDinero) {
+    categories.push({
       id: 1,
+      key: "dinero",
       title: "Dinero",
       description:
-        "Se puede donar dinero a organizaciones benéficas y de ayuda humanitaria para que puedan brindar asistencia.",
+        "Donar dinero a organizaciones benéficas y de ayuda humanitaria.",
       icon: "cash-outline",
-    },
-    {
+    });
+  }
+
+  if (donarEsenciales) {
+    categories.push({
       id: 2,
+      key: "esenciales",
       title: "Artículos esenciales",
       description:
-        "Se pueden donar artículos como alimentos no perecederos, agua embotellada, ropa, mantas, medicamentos y suministros médicos.",
+        "Donar artículos como alimentos no perecederos, agua embotellada, ropa, mantas.",
       icon: "basket-outline",
-    },
-    {
+    });
+  }
+
+  if (donarEmergencia) {
+    categories.push({
       id: 3,
+      key: "emergencia",
       title: "Artículos de emergencia",
       description:
-        "Se pueden donar artículos como colchones, calefacción eléctrica, o financiar un refugio.",
+        "Donar artículos como colchones, calefacción eléctrica, o financiar un refugio.",
       icon: "bed-outline",
-    },
-    {
+    });
+  }
+
+  if (donarEspecie) {
+    categories.push({
       id: 4,
+      key: "especie",
       title: "Artículos en especie",
       description:
-        "Se pueden donar artículos como jabón, pañales para bebés, calzado, mosquiteros, equipo de ingeniería pesada, generadores, fletes y transporte aéreos.",
+        "Donar artículos como jabón, pañales, calzado, mosquiteros, equipo pesado, generadores.",
       icon: "cube-outline",
-    },
-  ];
+    });
+  }
 
-  const handleDonation = (category: {
-    id: number;
-    title: string;
-    description: string;
-    icon: string;
-  }) => {
-    Alert.alert(
-      "Gracias por tu interés en donar",
-      `Has seleccionado la categoría: ${category.title}. Pronto te redirigiremos a la página de donación correspondiente.`,
-      [{ text: "OK" }]
-    );
-    // Here you would typically navigate to a specific donation page or form
+  const handleDonation = (category: Category) => {
+    if (category.key === "dinero") {
+      // Handle dinero donation
+      Alert.alert(
+        "Donar Dinero",
+        instruccionesDinero || "Gracias por tu interés en donar dinero.",
+        [{ text: "OK" }]
+      );
+    } else {
+      // Navigate to a specific donation page or show items to donate
+      router.push({
+        pathname: `(riskSituation)/(donar)/${category.key}`,
+        params: { riskSituationId },
+      });
+    }
   };
 
   return (
@@ -70,7 +157,7 @@ export default function DonarPage() {
 
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => router.back()}
           style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color="white" />
@@ -81,7 +168,7 @@ export default function DonarPage() {
       <View style={styles.titleContainer}>
         <Text style={styles.title}>Donar</Text>
         <Text style={styles.subtitle}>
-          Selecciona una categoría para donar y ayudar a Acapulco
+          Selecciona una categoría para donar y ayudar a {nombre}
         </Text>
       </View>
 
@@ -110,10 +197,26 @@ export default function DonarPage() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#8B1818",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    backgroundColor: "#8B1818",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+  },
   container: {
     flex: 1,
     backgroundColor: "#8B1818",
-    paddingTop: 20,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   header: {
     padding: 16,

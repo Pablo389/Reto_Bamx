@@ -9,13 +9,15 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { LinearGradient } from "expo-linear-gradient";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/config/firebaseConfig";
+import { useSession } from "@/hooks/ctx";
 
 const imageMapper = {
   "actividad1.jpg": require("../../../../assets/images/actividad1.jpg"),
@@ -30,45 +32,106 @@ interface Activity {
   participants: number;
   totalParticipants: number;
   image: keyof typeof imageMapper;
-  status?: "urgent" | "active" | "full";
+  status?: "urgent" | "activo" | "full";
 }
 
 export default function HomePage() {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const isRiskSituation = true;
+  const [fetchedActivities, setFetchedActivities] = useState<Activity[]>([]);
+  const [registeredActivitiesIds, setRegisteredActivitiesIds] = useState<
+    string[]
+  >([]);
+  const [riskSituation, setRiskSituation] = useState<any>(null);
+
+  const { id: userId } = useSession();
 
   type RootStackParamList = {
     Home: undefined;
     ActivityDetail: { item: Activity };
-    "(riskSituation)": undefined;
+    "(riskSituation)": { riskSituationId: string };
   };
 
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-  // Fetch activities from Firestore
+  // Fetch registered activities and active activities
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "activities"),
+    if (!userId) return;
+
+    // Listener for user's registered activities
+    const registeredActivitiesRef = collection(
+      db,
+      "users",
+      userId,
+      "registeredActivities"
+    );
+    const unsubscribeRegisteredActivities = onSnapshot(
+      registeredActivitiesRef,
       (snapshot) => {
-        const fetchedActivities: Activity[] = snapshot.docs.map((doc) => ({
+        const ids = snapshot.docs.map((doc) => doc.data().activityId.id);
+        setRegisteredActivitiesIds(ids);
+      },
+      (error) => {
+        console.error("Error fetching registered activities:", error);
+      }
+    );
+
+    // Listener for activities where status == 'activo'
+    const activitiesQuery = query(
+      collection(db, "activities"),
+      where("status", "==", "activo")
+    );
+    const unsubscribeActivities = onSnapshot(
+      activitiesQuery,
+      (snapshot) => {
+        const fetched = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...(doc.data() as Omit<Activity, "id">),
         }));
-        setActivities(fetchedActivities);
+        setFetchedActivities(fetched);
       },
       (error) => {
         console.error("Error fetching activities:", error);
       }
     );
 
-    return () => unsubscribe(); // Cleanup listener
-  }, []);
+    // Listener for risk situations
+    const riskSituationsRef = collection(db, "riskSituations");
+    const unsubscribeRiskSituations = onSnapshot(
+      riskSituationsRef,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          // Assuming only one risk situation is active
+          const doc = snapshot.docs[0];
+          setRiskSituation({ id: doc.id, ...(doc.data() as any) });
+        } else {
+          setRiskSituation(null);
+        }
+      },
+      (error) => {
+        console.error("Error fetching risk situations:", error);
+      }
+    );
+
+    return () => {
+      unsubscribeRegisteredActivities();
+      unsubscribeActivities();
+      unsubscribeRiskSituations();
+    };
+  }, [userId]);
+
+  // Filter out activities the user is already registered for
+  useEffect(() => {
+    const filteredActivities = fetchedActivities.filter(
+      (activity) => !registeredActivitiesIds.includes(activity.id)
+    );
+    setActivities(filteredActivities);
+  }, [fetchedActivities, registeredActivitiesIds]);
 
   const getStatusColor = (status?: string) => {
     switch (status) {
       case "urgent":
         return "#FF3B30";
-      case "active":
+      case "activo":
         return "#34C759";
       case "full":
         return "#8E8E93";
@@ -125,23 +188,38 @@ export default function HomePage() {
     </TouchableOpacity>
   );
 
+  if (!userId) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <FlatList
         ListHeaderComponent={
           <>
-            {isRiskSituation && (
+            {riskSituation && (
               <TouchableOpacity
                 style={styles.alertCard}
-                onPress={() => navigation.navigate("(riskSituation)")}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(riskSituation)",
+                    params: { riskSituationId: riskSituation.id },
+                  })
+                }
                 activeOpacity={0.95}
               >
                 <View style={styles.alertContent}>
                   <View style={styles.iconContainer}>
                     <Ionicons name="shield" size={32} color="#FFFFFF" />
                   </View>
-                  <Text style={styles.alertCardTitle}>¡Ayuda a Acapulco!</Text>
+                  <Text style={styles.alertCardTitle}>
+                    ¡Ayuda a {riskSituation.nombre}!
+                  </Text>
                   <View style={styles.helpButton}>
                     <Text style={styles.helpButtonText}>QUIERO AYUDAR</Text>
                     <Ionicons name="arrow-forward" size={20} color="#A00000" />
@@ -166,8 +244,13 @@ export default function HomePage() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#1A1A1A",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   container: {
     flex: 1,
     backgroundColor: "#1A1A1A",

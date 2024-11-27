@@ -10,6 +10,7 @@ import {
   Platform,
   StatusBar,
   Animated,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -17,21 +18,131 @@ import { RouteProp } from "@react-navigation/native";
 import { RootStackParamList } from "../../../../constants/types";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSession } from "@/hooks/ctx";
+import {
+  getFirestore,
+  doc,
+  collection,
+  addDoc,
+  setDoc,
+  serverTimestamp,
+  updateDoc,
+  increment,
+  getDoc,
+} from "firebase/firestore";
+import { auth } from "@/config/firebaseConfig";
 
 type ActivityDetailRouteProp = RouteProp<RootStackParamList, "ActivityDetail">;
 
 export default function ActivityDetailScreen() {
   const route = useRoute<ActivityDetailRouteProp>();
   const navigation = useNavigation();
-  const { item } = route.params;
+  const {
+    item,
+  }: {
+    item: {
+      image: keyof typeof imageMapper;
+      title: string;
+      id: string;
+      location: { name: string };
+      participants: string;
+      totalParticipants: string;
+    };
+  } = route.params;
+  const participants = parseInt(item.participants);
+  const totalParticipants = parseInt(item.totalParticipants);
   const scrollY = new Animated.Value(0);
   const { id } = useSession();
+  const db = getFirestore();
 
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100],
     outputRange: [0, 1],
     extrapolate: "clamp",
   });
+
+  const imageMapper = {
+    "actividad1.jpg": require("../../../../assets/images/actividad1.jpg"),
+    "actividad2.jpeg": require("../../../../assets/images/actividad2.jpeg"),
+    "actividad3.jpeg": require("../../../../assets/images/actividad3.jpeg"),
+  };
+
+  const handleApplyNow = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert("Error", "User not logged in.");
+        return;
+      }
+
+      const userId = user.uid;
+
+      // Fetch the user's name from Firestore
+      const userDocRef = doc(db, "users", userId);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+        Alert.alert("Error", "User profile not found.");
+        return;
+      }
+
+      const userData = userDocSnap.data();
+      const userName = userData.name || "Anonymous";
+      const userEmail = userData.email || "No email"; // Assuming you store email in user document
+
+      // Reference to the activity's users subcollection
+      const activityUsersRef = collection(db, "activities", item.id, "users");
+
+      // Check if the user is already registered (optional)
+      // ...
+
+      // Create a new document in activities/{activityId}/users/{newId}
+      const newActivityUserRef = await addDoc(activityUsersRef, {
+        userId: userId,
+        name: userName,
+        email: userEmail,
+        userReference: userDocRef,
+        registeredAt: serverTimestamp(),
+      });
+
+      // Reference to the user's registeredActivities subcollection
+      const userActivitiesRef = collection(
+        db,
+        "users",
+        userId,
+        "registeredActivities"
+      );
+
+      // Create a new document in users/{userId}/registeredActivities/{newId}
+      await setDoc(doc(userActivitiesRef, newActivityUserRef.id), {
+        activityId: doc(db, "activities", item.id),
+        registeredAt: serverTimestamp(),
+      });
+
+      // Increment the 'participantes' field in the activity document
+      const activityRef = doc(db, "activities", item.id);
+      await updateDoc(activityRef, {
+        participants: increment(1),
+      });
+      if (participants + 1 === totalParticipants) {
+        await updateDoc(activityRef, {
+          status: "not",
+        });
+      }
+      Alert.alert("Success", "You have successfully applied for the activity.");
+
+      // Optionally, navigate the user to another screen
+      // navigation.navigate("YourNextScreen");
+    } catch (error) {
+      console.error("Error applying for activity:", error);
+      Alert.alert(
+        "Error",
+        "An error occurred while applying for the activity."
+      );
+    } finally {
+      // Cleanup, navigate back to the previous screen
+      navigation.goBack();
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -64,7 +175,7 @@ export default function ActivityDetailScreen() {
         scrollEventThrottle={16}
       >
         <View style={styles.heroSection}>
-          <Image source={item.image} style={styles.heroImage} />
+          <Image source={imageMapper[item.image]} style={styles.heroImage} />
           <LinearGradient
             colors={["transparent", "rgba(26, 26, 26, 0.8)", "#1A1A1A"]}
             style={styles.heroGradient}
@@ -122,7 +233,7 @@ export default function ActivityDetailScreen() {
               </View>
               <View style={styles.statContent}>
                 <Text style={styles.statNumber}>
-                  {item.participants}/{item.totalParticipants}
+                  {participants}/{totalParticipants}
                 </Text>
                 <View style={styles.progressBar}>
                   <View
@@ -148,7 +259,11 @@ export default function ActivityDetailScreen() {
         <TouchableOpacity style={styles.likeButton}>
           <Ionicons name="heart-outline" size={24} color="#D32F2F" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.applyButton} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.applyButton}
+          activeOpacity={0.8}
+          onPress={handleApplyNow}
+        >
           <Text style={styles.applyButtonText}>APLICAR AHORA</Text>
           <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
         </TouchableOpacity>
