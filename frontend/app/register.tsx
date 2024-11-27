@@ -35,19 +35,29 @@ export default function RegisterForm() {
   const { signIn } = useSession();
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
 
-  const handleDateChange = (event, selectedDate) => {
+  const handleDateChange = (event: any, selectedDate?: Date | undefined): void => {
     setShowDatePicker(false);
     if (selectedDate) {
       setFormData((prev) => ({ ...prev, birthday: selectedDate }));
     }
   };
 
-  const handleCustomDateConfirm = (date) => {
+  const handleCustomDateConfirm = (date: Date) => {
     setShowCustomDatePicker(false);
     setFormData((prev) => ({ ...prev, birthday: date }));
   };
 
-  const formatDate = (date) => {
+  interface FormData {
+    name: string;
+    phone: string;
+    email: string;
+    password: string;
+    birthday: Date;
+    gender: string;
+    address: string;
+  }
+
+  const formatDate = (date: Date): string => {
     return date.toLocaleDateString("es-ES", {
       day: "2-digit",
       month: "2-digit",
@@ -114,13 +124,13 @@ export default function RegisterForm() {
         });
     } catch (error) {
       console.error("Error al registrar:", error);
-      Alert.alert("Error", error.message);
+      Alert.alert("Error", (error as any).message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGenderSelect = (selectedGender) => {
+  const handleGenderSelect = (selectedGender: string) => {
     setFormData((prev) => ({ ...prev, gender: selectedGender }));
     setShowGenderModal(false);
   };
