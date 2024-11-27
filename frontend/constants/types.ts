@@ -11,7 +11,7 @@ export type RootStackParamList = {
 export interface Activity {
   id: string;
   title: string;
-  location: string;
+  location: { name: string; link: string };
   participants: string;
   totalParticipants: string;
   image: any;

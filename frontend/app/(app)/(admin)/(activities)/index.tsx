@@ -21,6 +21,7 @@ import { db } from "@/config/firebaseConfig";
 const imageMapper = {
   "actividad1.jpg": require("../../../../assets/images/actividad1.jpg"),
   "actividad2.jpeg": require("../../../../assets/images/actividad2.jpeg"),
+  "actividad3.jpeg": require("../../../../assets/images/actividad3.jpeg"),
 };
 
 interface Activity {
@@ -79,6 +80,7 @@ export default function AdminActivitiesPage() {
   const imageMapper = {
     "actividad1.jpg": require("../../../../assets/images/actividad1.jpg"),
     "actividad2.jpeg": require("../../../../assets/images/actividad2.jpeg"),
+    "actividad3.jpeg": require("../../../../assets/images/actividad3.jpeg"),
   };
 
   const renderActivityItem = ({ item }: { item: Activity }) => (

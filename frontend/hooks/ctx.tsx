@@ -15,6 +15,7 @@ const AuthContext = createContext<{
   session?: string | null;
   email?: string | null;
   role?: string | null;
+  id?: string | null;
   isLoading: boolean;
 }>({
   signIn: async () => {},
@@ -22,6 +23,7 @@ const AuthContext = createContext<{
   session: null,
   email: null,
   role: null,
+  id: null,
   isLoading: false,
 });
 
@@ -42,6 +44,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [[isLoading, session], setSession] = useStorageState("session");
   const [email, setEmail] = useStorageState("email");
   const [role, setRole] = useStorageState("role");
+  const [id, setId] = useStorageState("id");
 
   // Sign-In Function
   const signInHandler = async (email: string, password: string) => {
@@ -62,6 +65,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
       // Save role (e.g., "admin" or "user") from Firestore
       setRole(result.userSession.role); // Ensure `role` is fetched during sign-in
+      setId(result.userSession.id); // Save user ID
     } else {
       console.error("Sign-in failed:", result.error);
     }
@@ -72,6 +76,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setSession(null);
     setEmail(null);
     setRole(null); // Clear role
+    setId(null); // Clear user ID
   };
 
   return (
@@ -81,7 +86,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
         signOut: signOutHandler,
         session,
         email: email[1],
-        role: role[1], // Expose role
+        role: role[1],
+        id: id[1],
         isLoading,
       }}
     >
