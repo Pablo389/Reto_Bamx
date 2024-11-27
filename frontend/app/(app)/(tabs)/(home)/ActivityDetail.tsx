@@ -16,6 +16,7 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 import { RouteProp } from "@react-navigation/native";
 import { RootStackParamList } from "../../../../constants/types";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSession } from "@/hooks/ctx";
 
 type ActivityDetailRouteProp = RouteProp<RootStackParamList, "ActivityDetail">;
 
@@ -24,6 +25,7 @@ export default function ActivityDetailScreen() {
   const navigation = useNavigation();
   const { item } = route.params;
   const scrollY = new Animated.Value(0);
+  const { id } = useSession();
 
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100],
@@ -96,7 +98,7 @@ export default function ActivityDetailScreen() {
                   <Ionicons name="location-outline" size={20} color="#666666" />
                   <View>
                     <Text style={styles.detailLabel}>Ubicación</Text>
-                    <Text style={styles.detailValue}>{item.location}</Text>
+                    <Text style={styles.detailValue}>{item.location.name}</Text>
                   </View>
                 </View>
                 <View style={styles.detailItem}>
@@ -137,16 +139,6 @@ export default function ActivityDetailScreen() {
                   />
                 </View>
               </View>
-            </View>
-
-            <View style={styles.statCard}>
-              <View style={styles.statHeader}>
-                <Text style={styles.statTitle}>Tiempo de desvío</Text>
-                <View style={[styles.statBadge, styles.timeBadge]}>
-                  <Text style={styles.statBadgeText}>Minutos aprox.</Text>
-                </View>
-              </View>
-              <Text style={[styles.statNumber, styles.timeNumber]}>6</Text>
             </View>
           </View>
         </View>
