@@ -25,6 +25,7 @@ export default function LoginScreen() {
       .then(async () => {
         try {
           await AsyncStorage.setItem("@user_logged_in", "true");
+          console.log("Estado de inicio de sesión guardado");
         } catch (error) {
           console.error("Error al guardar el estado de inicio de sesión:", error);
         }

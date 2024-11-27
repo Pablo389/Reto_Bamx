@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Modal,
 } from "react-native";
 import { ArrowLeft, Calendar, ChevronDown } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -16,6 +17,7 @@ import { auth, db } from "../config/firebaseConfig";
 import { router } from "expo-router";
 import { useSession } from "@/hooks/ctx";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import CustomDatePicker from "@/components/CustomDatePicker";
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({
@@ -28,15 +30,21 @@ export default function RegisterForm() {
     address: "",
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showGenderPicker, setShowGenderPicker] = useState(false);
+  const [showGenderModal, setShowGenderModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signIn } = useSession();
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
 
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
       setFormData((prev) => ({ ...prev, birthday: selectedDate }));
     }
+  };
+
+  const handleCustomDateConfirm = (date) => {
+    setShowCustomDatePicker(false);
+    setFormData((prev) => ({ ...prev, birthday: date }));
   };
 
   const formatDate = (date) => {
@@ -78,6 +86,7 @@ export default function RegisterForm() {
 
       await setDoc(doc(db, "users", user.uid), {
         name: formData.name,
+        email: formData.email,
         phone: formData.phone,
         birthday: formData.birthday,
         gender: formData.gender,
@@ -109,6 +118,11 @@ export default function RegisterForm() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGenderSelect = (selectedGender) => {
+    setFormData((prev) => ({ ...prev, gender: selectedGender }));
+    setShowGenderModal(false);
   };
 
   return (
@@ -185,7 +199,7 @@ export default function RegisterForm() {
             <Text style={styles.label}>Cumpleaños</Text>
             <TouchableOpacity
               style={styles.dateInput}
-              onPress={() => setShowDatePicker(true)}
+              onPress={() => setShowCustomDatePicker(true)}
             >
               <Text style={styles.dateText}>
                 {formatDate(formData.birthday)}
@@ -198,10 +212,10 @@ export default function RegisterForm() {
             <Text style={styles.label}>Género</Text>
             <TouchableOpacity
               style={styles.genderInput}
-              onPress={() => setShowGenderPicker(!showGenderPicker)}
+              onPress={() => setShowGenderModal(true)}
             >
               <Text style={styles.genderText}>
-                {formData.gender || "Hombre"}
+                {formData.gender || "Seleccionar"}
               </Text>
               <ChevronDown size={20} color="#666" />
             </TouchableOpacity>
@@ -239,14 +253,41 @@ export default function RegisterForm() {
         </View>
       </View>
 
-      {showDatePicker && (
-        <DateTimePicker
-          value={formData.birthday}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-        />
-      )}
+      <CustomDatePicker
+        isVisible={showCustomDatePicker}
+        date={formData.birthday}
+        onConfirm={handleCustomDateConfirm}
+        onCancel={() => setShowCustomDatePicker(false)}
+      />
+
+      <Modal
+        visible={showGenderModal}
+        transparent={true}
+        animationType="slide"
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={() => handleGenderSelect("Hombre")}
+            >
+              <Text>Hombre</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={() => handleGenderSelect("Mujer")}
+            >
+              <Text>Mujer</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={() => setShowGenderModal(false)}
+            >
+              <Text style={styles.cancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -376,5 +417,25 @@ const styles = StyleSheet.create({
   loginLink: {
     color: "#B33E3E",
     fontWeight: "600",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  modalOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  cancelText: {
+    color: 'red',
+    textAlign: 'center',
   },
 });
