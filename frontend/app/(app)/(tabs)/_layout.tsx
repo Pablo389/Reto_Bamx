@@ -20,7 +20,6 @@ export default function TabLayout() {
         headerShown: false,
       }}
     >
-      {/* Home Tab */}
       <Tabs.Screen
         name="(home)"
         options={{
@@ -34,21 +33,18 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Explore Tab */}
       <Tabs.Screen
-        name="explore"
+        name="myActivity"
         options={{
-          title: "Explore",
+          title: "My activities",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
-              name={focused ? "code-slash" : "code-slash-outline"}
+              name={focused ? "person" : "person-outline"}
               color={color}
             />
           ),
         }}
       />
-
-      {/* Profile Tab */}
       <Tabs.Screen
         name="profile"
         options={{

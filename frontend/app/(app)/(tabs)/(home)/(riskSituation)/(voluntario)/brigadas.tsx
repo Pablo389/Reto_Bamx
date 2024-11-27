@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,79 +10,122 @@ import {
   Alert,
   Linking,
   Modal,
+  ActivityIndicator,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { doc, getDoc, updateDoc, increment } from "firebase/firestore";
+import { db } from "@/config/firebaseConfig";
+import { useSession } from "@/hooks/ctx";
 
 export default function BrigadasPage() {
-  const navigation = useNavigation();
-  const [slots, setSlots] = useState([
-    {
-      id: 1,
-      date: "2023-11-25",
-      time: "09:00 - 13:00",
-      available: 5,
-      location: "https://maps.app.goo.gl/KZ69VmoQ7nCN18AW6",
-    },
-    {
-      id: 2,
-      date: "2023-11-25",
-      time: "14:00 - 18:00",
-      available: 3,
-      location: "https://maps.app.goo.gl/UV2QntQmnaGMzeo87",
-    },
-    {
-      id: 3,
-      date: "2023-11-26",
-      time: "09:00 - 13:00",
-      available: 7,
-      location: "https://maps.app.goo.gl/aCow3N9udzGXXcxe8",
-    },
-    {
-      id: 4,
-      date: "2023-11-26",
-      time: "14:00 - 18:00",
-      available: 2,
-      location: "https://maps.app.goo.gl/NsRL8kUQNDCksYuC8",
-    },
-  ]);
+  const router = useRouter();
+  const { riskSituationId } = useLocalSearchParams();
+  const { id: userId } = useSession();
+
+  const [brigadeInfo, setBrigadeInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [riskSituation, setRiskSituation] = useState<any>(null);
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<{
-    id: number;
-    date: string;
-    time: string;
-    available: number;
-    location: string;
-  } | null>(null);
 
-  const handleSignUp = (slot: {
-    id: number;
-    date: string;
-    time: string;
-    available: number;
-    location: string;
-  }) => {
-    setSelectedSlot(slot);
+  useEffect(() => {
+    if (!riskSituationId) {
+      console.error("No riskSituationId provided");
+      setLoading(false);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        // Fetch riskSituation document
+        const riskSituationRef = doc(
+          db,
+          "riskSituations",
+          riskSituationId as string
+        );
+        const docSnap = await getDoc(riskSituationRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setRiskSituation({ id: docSnap.id, ...data });
+
+          // Extract voluntariosBrigadas data
+          const voluntariosBrigadas = data.voluntariosBrigadas;
+          if (voluntariosBrigadas) {
+            setBrigadeInfo(voluntariosBrigadas);
+          } else {
+            setBrigadeInfo(null);
+          }
+        } else {
+          console.error("No such riskSituation document!");
+        }
+      } catch (error) {
+        console.error("Error fetching riskSituation:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [riskSituationId]);
+
+  const handleSignUp = () => {
     setModalVisible(true);
   };
 
-  const confirmSignUp = () => {
-    // Here you would typically make an API call to register the user
-    Alert.alert(
-      "Registro Exitoso",
-      "Te has registrado para esta brigada. Se han enviado instrucciones específicas a tu correo. Gracias por tu ayuda!",
-      [{ text: "OK" }]
-    );
-
-    if (selectedSlot) {
-      setSlots(
-        slots.map((s) =>
-          s.id === selectedSlot.id ? { ...s, available: s.available - 1 } : s
-        )
-      );
+  const confirmSignUp = async () => {
+    if (!brigadeInfo || !riskSituationId || !userId) {
+      setModalVisible(false);
+      return;
     }
-    setModalVisible(false);
+
+    try {
+      const riskSituationRef = doc(
+        db,
+        "riskSituations",
+        riskSituationId as string
+      );
+
+      // Check if there is still capacity
+      if (brigadeInfo.registrados >= brigadeInfo.maximo) {
+        Alert.alert(
+          "Registro fallido",
+          "Lo sentimos, ya no hay cupo disponible."
+        );
+        setModalVisible(false);
+        return;
+      }
+
+      // Increment registrados in Firestore
+      await updateDoc(riskSituationRef, {
+        "voluntariosBrigadas.registrados": increment(1),
+      });
+
+      // Optionally, add user to a list of participants
+      // e.g., create a subcollection 'voluntariosBrigadasParticipants' and add userId
+
+      // Update local state
+      setBrigadeInfo((prev: any) => ({
+        ...prev,
+        registrados: prev.registrados + 1,
+      }));
+
+      Alert.alert(
+        "Registro Exitoso",
+        "Te has registrado para esta brigada. Se han enviado instrucciones específicas a tu correo. ¡Gracias por tu ayuda!",
+        [{ text: "OK" }]
+      );
+    } catch (error) {
+      console.error("Error updating registrados:", error);
+      Alert.alert(
+        "Error",
+        "Ocurrió un error al registrarte. Por favor, intenta de nuevo."
+      );
+    } finally {
+      setModalVisible(false);
+    }
   };
 
   const openLocation = (url: string) => {
@@ -91,13 +134,31 @@ export default function BrigadasPage() {
     );
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+      </View>
+    );
+  }
+
+  if (!riskSituation || !brigadeInfo) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Error loading data.</Text>
+      </View>
+    );
+  }
+
+  const availableSlots = brigadeInfo.maximo - brigadeInfo.registrados;
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
 
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => router.back()}
           style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color="white" />
@@ -108,38 +169,32 @@ export default function BrigadasPage() {
       <View style={styles.titleContainer}>
         <Text style={styles.title}>Brigadas</Text>
         <Text style={styles.subtitle}>
-          Únete a una brigada para ayudar en Acapulco
+          Únete a la brigada para ayudar en {riskSituation.nombre}
         </Text>
       </View>
 
-      <ScrollView style={styles.slotsContainer}>
-        {slots.map((slot) => (
-          <View key={slot.id} style={styles.slotCard}>
-            <View style={styles.slotInfo}>
-              <Text style={styles.slotDate}>{slot.date}</Text>
-              <Text style={styles.slotTime}>{slot.time}</Text>
-              <Text style={styles.slotAvailable}>
-                Espacios disponibles: {slot.available}
-              </Text>
-              <TouchableOpacity onPress={() => openLocation(slot.location)}>
-                <Text style={styles.locationLink}>Ver ubicación</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity
-              style={[
-                styles.signUpButton,
-                slot.available === 0 && styles.disabledButton,
-              ]}
-              onPress={() => handleSignUp(slot)}
-              disabled={slot.available === 0}
-            >
-              <Text style={styles.signUpButtonText}>
-                {slot.available === 0 ? "Lleno" : "Inscribirse"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-      </ScrollView>
+      <View style={styles.slotCard}>
+        <View style={styles.slotInfo}>
+          <Text style={styles.slotAvailable}>
+            Espacios disponibles: {availableSlots}
+          </Text>
+          <TouchableOpacity onPress={() => openLocation(brigadeInfo.location)}>
+            <Text style={styles.locationLink}>Ver ubicación</Text>
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity
+          style={[
+            styles.signUpButton,
+            availableSlots === 0 && styles.disabledButton,
+          ]}
+          onPress={handleSignUp}
+          disabled={availableSlots === 0}
+        >
+          <Text style={styles.signUpButtonText}>
+            {availableSlots === 0 ? "Lleno" : "Inscribirse"}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <Modal
         animationType="slide"
@@ -176,10 +231,26 @@ export default function BrigadasPage() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#8B1818",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    backgroundColor: "#8B1818",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+  },
   container: {
     flex: 1,
     backgroundColor: "#8B1818",
-    paddingTop: 20,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   header: {
     padding: 16,
@@ -208,14 +279,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     opacity: 0.9,
   },
-  slotsContainer: {
-    padding: 16,
-  },
   slotCard: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
+    marginHorizontal: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -223,26 +291,15 @@ const styles = StyleSheet.create({
   slotInfo: {
     flex: 1,
   },
-  slotDate: {
+  slotAvailable: {
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
-  },
-  slotTime: {
-    color: "white",
-    fontSize: 16,
-    opacity: 0.8,
-  },
-  slotAvailable: {
-    color: "white",
-    fontSize: 14,
-    opacity: 0.7,
-    marginTop: 4,
+    marginBottom: 8,
   },
   locationLink: {
     color: "white",
-    fontSize: 20,
-    marginTop: 4,
+    fontSize: 16,
     textDecorationLine: "underline",
   },
   signUpButton: {
@@ -251,6 +308,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 20,
     height: 40,
+    justifyContent: "center",
   },
   signUpButtonText: {
     color: "black",
@@ -283,6 +341,7 @@ const styles = StyleSheet.create({
   modalText: {
     marginBottom: 15,
     textAlign: "center",
+    color: "#000",
   },
   modalButtons: {
     flexDirection: "row",

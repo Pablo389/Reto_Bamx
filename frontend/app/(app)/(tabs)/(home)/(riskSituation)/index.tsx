@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,18 +8,53 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
-import { useNavigation } from "expo-router";
-import { StackNavigationProp } from "@react-navigation/stack";
+import { useRouter, useLocalSearchParams, Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-
-type RootStackParamList = {
-  "(donar)": undefined;
-  "(voluntario)": undefined;
-};
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/config/firebaseConfig";
 
 export default function RiskSituation() {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const router = useRouter();
+  const { riskSituationId } = useLocalSearchParams();
+
+  const [riskSituation, setRiskSituation] = useState<any>(null);
+
+  useEffect(() => {
+    if (!riskSituationId) {
+      console.error("No riskSituationId provided");
+      return;
+    }
+
+    // Fetch riskSituation document
+    const riskSituationRef = doc(
+      db,
+      "riskSituations",
+      riskSituationId as string
+    );
+    getDoc(riskSituationRef)
+      .then((docSnap) => {
+        if (docSnap.exists()) {
+          setRiskSituation({ id: docSnap.id, ...(docSnap.data() as any) });
+        } else {
+          console.error("No such riskSituation document!");
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching riskSituation:", error);
+      });
+  }, [riskSituationId]);
+
+  if (!riskSituation) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+      </View>
+    );
+  }
+
+  const { nombre, donar, voluntarios } = riskSituation;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -28,7 +63,7 @@ export default function RiskSituation() {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => router.back()}
           >
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
@@ -36,50 +71,66 @@ export default function RiskSituation() {
         </View>
 
         <View style={styles.heroSection}>
-          <Text style={styles.title}>¡Ayuda a Acapulco!</Text>
+          <Text style={styles.title}>¡Ayuda a {nombre}!</Text>
           <Text style={styles.subtitle}>
             Selecciona una categoría para ayudar:
           </Text>
         </View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.navigate("(donar)")}
-            activeOpacity={0.9}
-          >
-            <Image
-              source={require("../../../../../assets/images/donar.jpeg")}
-              style={styles.buttonImage}
-            />
-            <View style={styles.overlay}>
-              <View style={styles.buttonContent}>
-                <Ionicons name="heart-outline" size={24} color="#FFFFFF" />
-                <Text style={styles.buttonText}>Donar</Text>
-                <Text style={styles.buttonSubtext}>
-                  Ayuda con víveres y recursos
-                </Text>
+          {donar && (
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() =>
+                router.push({
+                  pathname: "/(riskSituation)/(donar)/",
+                  params: { riskSituationId: riskSituation.id },
+                })
+              }
+              activeOpacity={0.9}
+            >
+              <Image
+                source={require("../../../../../assets/images/donar.jpeg")}
+                style={styles.buttonImage}
+              />
+              <View style={styles.overlay}>
+                <View style={styles.buttonContent}>
+                  <Ionicons name="heart-outline" size={24} color="#FFFFFF" />
+                  <Text style={styles.buttonText}>Donar</Text>
+                  <Text style={styles.buttonSubtext}>
+                    Ayuda con víveres y recursos
+                  </Text>
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          )}
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.navigate("(voluntario)")}
-            activeOpacity={0.9}
-          >
-            <Image
-              source={require("../../../../../assets/images/voluntario.jpeg")}
-              style={styles.buttonImage}
-            />
-            <View style={styles.overlay}>
-              <View style={styles.buttonContent}>
-                <Ionicons name="people-outline" size={24} color="#FFFFFF" />
-                <Text style={styles.buttonText}>Voluntario</Text>
-                <Text style={styles.buttonSubtext}>Únete como voluntario</Text>
+          {voluntarios && (
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() =>
+                router.push({
+                  pathname: "/(riskSituation)/(voluntario)/",
+                  params: { riskSituationId: riskSituation.id },
+                })
+              }
+              activeOpacity={0.9}
+            >
+              <Image
+                source={require("../../../../../assets/images/voluntario.jpeg")}
+                style={styles.buttonImage}
+              />
+              <View style={styles.overlay}>
+                <View style={styles.buttonContent}>
+                  <Ionicons name="people-outline" size={24} color="#FFFFFF" />
+                  <Text style={styles.buttonText}>Voluntario</Text>
+                  <Text style={styles.buttonSubtext}>
+                    Únete como voluntario
+                  </Text>
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </SafeAreaView>
@@ -87,6 +138,12 @@ export default function RiskSituation() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#891616",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   container: {
     flex: 1,
     backgroundColor: "#891616",
