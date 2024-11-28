@@ -20,6 +20,8 @@ export default function RootLayout() {
   const pathname = usePathname();
   const router = useRouter();
 
+  console.log("Pathname:", pathname);
+
   useEffect(() => {
     const checkUserLoggedIn = async () => {
       try {

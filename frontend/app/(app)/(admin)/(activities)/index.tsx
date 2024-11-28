@@ -17,6 +17,8 @@ import { Picker } from "@react-native-picker/picker";
 import { Ionicons } from "@expo/vector-icons";
 import { addDoc, collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/config/firebaseConfig";
+import { useRouter } from "expo-router";
+
 
 const imageMapper = {
   "actividad1.jpg": require("../../../../assets/images/actividad1.jpg"),
@@ -37,10 +39,12 @@ interface Activity {
 export default function AdminActivitiesPage() {
   const [activities, setActivities] = useState<Activity[]>([]); // No initial hardcoded activities
   const [modalVisible, setModalVisible] = useState(false);
+  const [showStatusPicker, setShowStatusPicker] = useState(false);
   const [newActivity, setNewActivity] = useState<Partial<Activity>>({
     participants: 0,
     status: "activo",
   });
+  const router = useRouter();
 
   // Fetch activities from Firestore
   useEffect(() => {
@@ -84,7 +88,13 @@ export default function AdminActivitiesPage() {
   };
 
   const renderActivityItem = ({ item }: { item: Activity }) => (
-    <View style={styles.activityItem}>
+    <TouchableOpacity 
+      style={styles.activityItem}
+      onPress={() => router.push({
+        pathname: "/(admin)/(activities)/details",
+        params: { id: item.id }
+      })}
+    >
       <Image source={imageMapper[item.image]} style={styles.activityImage} />
       <View style={styles.activityDetails}>
         <Text style={styles.activityTitle}>{item.title}</Text>
@@ -100,7 +110,7 @@ export default function AdminActivitiesPage() {
       <TouchableOpacity style={styles.deleteButton}>
         <Ionicons name="trash-outline" size={24} color="#FF3B30" />
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -197,17 +207,58 @@ export default function AdminActivitiesPage() {
               />
               <View style={styles.pickerContainer}>
                 <Text style={styles.pickerLabel}>Estado</Text>
-                <Picker
-                  selectedValue={newActivity.status}
-                  onValueChange={(value: Activity["status"]) =>
-                    setNewActivity({ ...newActivity, status: value })
-                  }
-                  style={styles.picker}
+                <TouchableOpacity
+                  style={styles.pickerButton}
+                  onPress={() => setShowStatusPicker(true)}
                 >
-                  <Picker.Item label="Activo" value="activo" />
-                  <Picker.Item label="Inactivo" value="not" />
-                </Picker>
+                  <Text style={styles.pickerButtonText}>
+                    {newActivity.status === 'activo' ? 'Activo' : 'Inactivo'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={24} color="#666" />
+                </TouchableOpacity>
               </View>
+              <Modal
+                visible={showStatusPicker}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowStatusPicker(false)}
+              >
+                <View style={styles.pickerModalContainer}>
+                  <View style={styles.pickerModalContent}>
+                    <Text style={styles.pickerModalTitle}>Seleccionar Estado</Text>
+                    <TouchableOpacity
+                      style={styles.pickerModalOption}
+                      onPress={() => {
+                        setNewActivity({ ...newActivity, status: 'activo' });
+                        setShowStatusPicker(false);
+                      }}
+                    >
+                      <Text style={styles.pickerModalOptionText}>Activo</Text>
+                      {newActivity.status === 'activo' && (
+                        <Ionicons name="checkmark" size={24} color="#4CAF50" />
+                      )}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.pickerModalOption}
+                      onPress={() => {
+                        setNewActivity({ ...newActivity, status: 'not' });
+                        setShowStatusPicker(false);
+                      }}
+                    >
+                      <Text style={styles.pickerModalOptionText}>Inactivo</Text>
+                      {newActivity.status === 'not' && (
+                        <Ionicons name="checkmark" size={24} color="#4CAF50" />
+                      )}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.pickerModalCancelButton}
+                      onPress={() => setShowStatusPicker(false)}
+                    >
+                      <Text style={styles.pickerModalCancelText}>Cancelar</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Modal>
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={[styles.button, styles.buttonCancel]}
@@ -305,14 +356,78 @@ const styles = StyleSheet.create({
   },
   pickerLabel: {
     fontSize: 14,
-    marginBottom: 4,
     color: "#000000",
+    marginBottom: 8,
   },
-  picker: {
-    height: 50,
-    width: "100%",
+  pickerWrapper: {
     backgroundColor: "#EFEFEF",
     borderRadius: 5,
+    borderWidth: 1,
+    borderColor: "gray",
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 40,
+    width: "100%",
+    backgroundColor: "#EFEFEF",
+    color: "#000000",
+  },
+  pickerButton: {
+    backgroundColor: '#EFEFEF',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'gray',
+    padding: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  pickerButtonText: {
+    fontSize: 16,
+    color: '#000000',
+  },
+  pickerModalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  pickerModalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  pickerModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000000',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  pickerModalOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFEFEF',
+  },
+  pickerModalOptionText: {
+    fontSize: 18,
+    color: '#000000',
+  },
+  pickerModalCancelButton: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: '#FF6347',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  pickerModalCancelText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   centeredView: {
     flex: 1,
@@ -321,10 +436,11 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalView: {
-    width: "80%",
+    width: "90%", // Un poco más ancho para mejor visualización
+    maxHeight: "80%", // Evitar que ocupe toda la pantalla
     backgroundColor: "white",
     borderRadius: 20,
-    padding: 35,
+    padding: 20,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
@@ -335,19 +451,21 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 15,
-  },
   input: {
     height: 40,
     borderColor: "gray",
     borderWidth: 1,
     borderRadius: 5,
-    marginBottom: 10,
-    paddingHorizontal: 10,
+    marginBottom: 12,
+    paddingHorizontal: 12,
     width: "100%",
+    backgroundColor: "#EFEFEF",
+    color: "#000000",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 15,
   },
   modalButtons: {
     flexDirection: "row",

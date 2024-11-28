@@ -34,7 +34,7 @@ export default function AdminLayout() {
         }}
       />
       <Tabs.Screen
-        name="(activities)/index"
+        name="(activities)"
         options={{
           title: "Actividades",
           tabBarIcon: ({ color, focused }) => (
@@ -46,7 +46,7 @@ export default function AdminLayout() {
         }}
       />
       <Tabs.Screen
-        name="(riskSituations)/index"
+        name="(riskSituations)"
         options={{
           title: "Situaciones de Riesgo",
           tabBarIcon: ({ color, focused }) => (

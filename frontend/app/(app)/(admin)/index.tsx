@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,83 +8,99 @@ import {
   StatusBar,
   FlatList,
 } from "react-native";
-import { Href, useNavigation } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useSession } from "@/hooks/ctx";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "@/config/firebaseConfig";
+import { useSession } from "@/hooks/ctx";
 
-type AdminAction = {
+interface User {
   id: string;
-  title: string;
-  description: string;
-  icon: "clipboard" | "alert-circle" | "add-circle";
-  route: string;
-};
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  gender: string;
+  role: string;
+  birthday: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function AdminDashboard() {
-  const navigation = useNavigation();
-  const { session, signOut } = useSession();
+  const [users, setUsers] = useState<User[]>([]);
+  const { signOut } = useSession();
+  
+  useEffect(() => {
+    // Query para obtener usuarios que no sean admin
+    const q = query(
+      collection(db, "users"),
+      where("role", "==", "user")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedUsers = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as User));
+      setUsers(fetchedUsers);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleSignOut = () => {
     signOut();
     router.replace("/sign-in");
   };
 
-  const actions: AdminAction[] = [
-    {
-      id: "1",
-      title: "Gestionar Actividades",
-      description: "Crear, editar o eliminar actividades para voluntarios.",
-      icon: "clipboard",
-      route: "/(activities)", // Change to match your routing structure
-    },
-    {
-      id: "2",
-      title: "Gestionar Situaciones de Riesgo",
-      description: "Crear y gestionar situaciones de riesgo.",
-      icon: "alert-circle",
-      route: "/(riskSituations)", // Change to match your routing structure
-    },
-    {
-      id: "3",
-      title: "Agregar Nuevos Recursos",
-      description: "Agregar nuevos recursos o anuncios.",
-      icon: "add-circle",
-      route: "/(addResources)", // Change to match your routing structure
-    },
-  ];
-
-  const renderAction = ({ item }: { item: AdminAction }) => (
-    <TouchableOpacity
-      key={item.id}
-      style={styles.card}
-      onPress={() => router.push(item.route as Href)}
-    >
-      <View style={styles.cardIcon}>
-        <Ionicons name={item.icon} size={28} color="white" />
+  const renderUserItem = ({ item }: { item: User }) => (
+    <View style={styles.userCard}>
+      <View style={styles.userIcon}>
+        <Ionicons name="person" size={24} color="#FFF" />
       </View>
-      <View style={styles.cardContent}>
-        <Text style={styles.cardTitle}>{item.title}</Text>
-        <Text style={styles.cardDescription}>{item.description}</Text>
+      <View style={styles.userInfo}>
+        <Text style={styles.userName}>{item.name}</Text>
+        <Text style={styles.userEmail}>{item.email}</Text>
+        <View style={styles.userDetails}>
+          <View style={styles.detailItem}>
+            <Ionicons name="call-outline" size={16} color="#999" />
+            <Text style={styles.detailText}>{item.phone}</Text>
+          </View>
+          <View style={styles.detailItem}>
+            <Ionicons name="location-outline" size={16} color="#999" />
+            <Text style={styles.detailText}>{item.address}</Text>
+          </View>
+        </View>
       </View>
-      <Ionicons name="chevron-forward" size={24} color="white" />
-    </TouchableOpacity>
+    </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Panel de Administración</Text>
-        <TouchableOpacity onPress={handleSignOut}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+        <Text style={styles.headerTitle}>Usuarios Registrados</Text>
+        <TouchableOpacity 
+          style={styles.signOutButton}
+          onPress={handleSignOut}
+        >
+          <Ionicons name="log-out-outline" size={24} color="#FFF" />
         </TouchableOpacity>
       </View>
 
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{users.length}</Text>
+          <Text style={styles.statLabel}>Total Usuarios</Text>
+        </View>
+        {/* Puedes agregar más stats aquí */}
+      </View>
+
       <FlatList
-        data={actions}
+        data={users}
+        renderItem={renderUserItem}
         keyExtractor={(item) => item.id}
-        renderItem={renderAction}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
       />
@@ -96,52 +112,89 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#1A1A1A",
-    paddingTop: StatusBar.currentHeight,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    padding: 16,
+    backgroundColor: "#A00000",
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#FFFFFF",
+  },
+  signOutButton: {
+    padding: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 8,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    padding: 16,
+    gap: 16,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: "#333",
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FFF",
+  },
+  statLabel: {
+    fontSize: 14,
+    color: "#999",
+    marginTop: 4,
   },
   listContainer: {
     padding: 16,
   },
-  card: {
+  userCard: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#333333",
+    backgroundColor: "#333",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    elevation: 4,
   },
-  cardIcon: {
-    backgroundColor: "#D32F2F",
-    borderRadius: 12,
-    width: 50,
-    height: 50,
+  userIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#A00000",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
+    marginRight: 12,
   },
-  cardContent: {
+  userInfo: {
     flex: 1,
   },
-  cardTitle: {
+  userName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: "#FFF",
+    marginBottom: 4,
   },
-  cardDescription: {
+  userEmail: {
     fontSize: 14,
-    color: "#BBBBBB",
-    marginTop: 4,
+    color: "#999",
+    marginBottom: 8,
+  },
+  userDetails: {
+    gap: 4,
+  },
+  detailItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  detailText: {
+    fontSize: 14,
+    color: "#999",
   },
 });
