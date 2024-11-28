@@ -197,7 +197,7 @@ export default function MyActivitiesPage() {
               // 3. Decrement participantes in activity
               const activityRef = doc(db, "activities", activityId);
               batch.update(activityRef, {
-                participantes: increment(-1),
+                participants: increment(-1),
               });
 
               // Commit the batch

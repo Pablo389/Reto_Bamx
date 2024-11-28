@@ -18,7 +18,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/config/firebaseConfig";
 
-interface EssentialItem {
+interface EspecieItem {
   id: string;
   name: string;
   current: number;
@@ -28,10 +28,10 @@ interface EssentialItem {
   unit: string;
 }
 
-export default function EsencialesPage() {
+export default function EspeciePage() {
   const router = useRouter();
   const { riskSituationId } = useLocalSearchParams();
-  const [essentialItems, setEssentialItems] = useState<EssentialItem[]>([]);
+  const [especieItems, setEspecieItems] = useState<EspecieItem[]>([]);
   const [riskSituation, setRiskSituation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,10 +55,10 @@ export default function EsencialesPage() {
         if (docSnap.exists()) {
           const data = docSnap.data();
           setRiskSituation(data);
-          if (data.itemsEsenciales && Array.isArray(data.itemsEsenciales)) {
-            setEssentialItems(data.itemsEsenciales);
+          if (data.itemsEspecie && Array.isArray(data.itemsEspecie)) {
+            setEspecieItems(data.itemsEspecie);
           } else {
-            setEssentialItems([]);
+            setEspecieItems([]);
           }
         } else {
           setError("No such riskSituation document!");
@@ -77,10 +77,10 @@ export default function EsencialesPage() {
   const handleOpenLocation = () => {
     if (
       riskSituation &&
-      riskSituation.itemsEsencialesLocation &&
-      riskSituation.itemsEsencialesLocation.location
+      riskSituation.itemsEspecieLocation &&
+      riskSituation.itemsEspecieLocation.location
     ) {
-      Linking.openURL(riskSituation.itemsEsencialesLocation.location).catch(
+      Linking.openURL(riskSituation.itemsEspecieLocation.location).catch(
         (err) => console.error("Couldn't load page", err)
       );
     } else {
@@ -88,7 +88,7 @@ export default function EsencialesPage() {
     }
   };
 
-  const renderItem = ({ item }: { item: EssentialItem }) => (
+  const renderItem = ({ item }: { item: EspecieItem }) => (
     <View style={styles.itemCard}>
       <LinearGradient
         colors={["rgba(255, 255, 255, 0.1)", "rgba(255, 255, 255, 0.05)"]}
@@ -137,8 +137,8 @@ export default function EsencialesPage() {
   }
 
   const locationName =
-    riskSituation.itemsEsencialesLocation?.name || "Centro de Acopio";
-  const locationUrl = riskSituation.itemsEsencialesLocation?.location;
+    riskSituation.itemsEspecieLocation?.name || "Centro de Acopio";
+  const locationUrl = riskSituation.itemsEspecieLocation?.location;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -150,12 +150,12 @@ export default function EsencialesPage() {
         >
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Artículos Esenciales</Text>
+        <Text style={styles.headerTitle}>Artículos en Especie</Text>
       </View>
 
       <View style={styles.infoContainer}>
         <Text style={styles.infoTitle}>
-          Estos son los elementos esenciales que se necesitan
+          Estos son los artículos en especie que se necesitan
         </Text>
         {locationUrl && (
           <TouchableOpacity
@@ -175,13 +175,13 @@ export default function EsencialesPage() {
       </View>
 
       <FlatList
-        data={essentialItems}
+        data={especieItems}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
           <Text style={styles.emptyListText}>
-            No hay artículos esenciales disponibles.
+            No hay artículos en especie disponibles.
           </Text>
         }
       />

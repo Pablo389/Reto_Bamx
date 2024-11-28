@@ -39,7 +39,7 @@ export default function TabLayout() {
           title: "My activities",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
-              name={focused ? "person" : "person-outline"}
+              name={focused ? "list" : "list-outline"}
               color={color}
             />
           ),
