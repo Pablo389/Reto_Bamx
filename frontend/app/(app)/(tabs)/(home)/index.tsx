@@ -23,6 +23,7 @@ const imageMapper = {
   "actividad1.jpg": require("../../../../assets/images/actividad1.jpg"),
   "actividad2.jpeg": require("../../../../assets/images/actividad2.jpeg"),
   "actividad3.jpeg": require("../../../../assets/images/actividad3.jpeg"),
+  "actividad4.jpeg": require("../../../../assets/images/actividad4.jpeg"),
 };
 
 interface Activity {
@@ -35,13 +36,19 @@ interface Activity {
   status?: "urgent" | "activo" | "full";
 }
 
+interface RiskSituation {
+  id: string;
+  nombre: string;
+  // Include other fields as needed
+}
+
 export default function HomePage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [fetchedActivities, setFetchedActivities] = useState<Activity[]>([]);
   const [registeredActivitiesIds, setRegisteredActivitiesIds] = useState<
     string[]
   >([]);
-  const [riskSituation, setRiskSituation] = useState<any>(null);
+  const [riskSituations, setRiskSituations] = useState<RiskSituation[]>([]);
 
   const { id: userId } = useSession();
 
@@ -100,11 +107,13 @@ export default function HomePage() {
       riskSituationsRef,
       (snapshot) => {
         if (!snapshot.empty) {
-          // Assuming only one risk situation is active
-          const doc = snapshot.docs[0];
-          setRiskSituation({ id: doc.id, ...(doc.data() as any) });
+          const risks = snapshot.docs.map((doc) => ({
+            ...(doc.data() as RiskSituation),
+            id: doc.id,
+          }));
+          setRiskSituations(risks);
         } else {
-          setRiskSituation(null);
+          setRiskSituations([]);
         }
       },
       (error) => {
@@ -202,30 +211,39 @@ export default function HomePage() {
       <FlatList
         ListHeaderComponent={
           <>
-            {riskSituation && (
-              <TouchableOpacity
-                style={styles.alertCard}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(riskSituation)",
-                    params: { riskSituationId: riskSituation.id },
-                  })
-                }
-                activeOpacity={0.95}
-              >
-                <View style={styles.alertContent}>
-                  <View style={styles.iconContainer}>
-                    <Ionicons name="shield" size={32} color="#FFFFFF" />
-                  </View>
-                  <Text style={styles.alertCardTitle}>
-                    ¡Ayuda a {riskSituation.nombre}!
-                  </Text>
-                  <View style={styles.helpButton}>
-                    <Text style={styles.helpButtonText}>QUIERO AYUDAR</Text>
-                    <Ionicons name="arrow-forward" size={20} color="#A00000" />
-                  </View>
-                </View>
-              </TouchableOpacity>
+            {riskSituations.length > 0 && (
+              <>
+                {riskSituations.map((riskSituation) => (
+                  <TouchableOpacity
+                    key={riskSituation.id}
+                    style={styles.alertCard}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(riskSituation)",
+                        params: { riskSituationId: riskSituation.id },
+                      })
+                    }
+                    activeOpacity={0.95}
+                  >
+                    <View style={styles.alertContent}>
+                      <View style={styles.iconContainer}>
+                        <Ionicons name="shield" size={32} color="#FFFFFF" />
+                      </View>
+                      <Text style={styles.alertCardTitle}>
+                        ¡Ayuda a {riskSituation.nombre}!
+                      </Text>
+                      <View style={styles.helpButton}>
+                        <Text style={styles.helpButtonText}>QUIERO AYUDAR</Text>
+                        <Ionicons
+                          name="arrow-forward"
+                          size={20}
+                          color="#A00000"
+                        />
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </>
             )}
             <View style={styles.header}>
               <Text style={styles.headerTitle}>Actividades</Text>

@@ -118,7 +118,7 @@ export default function DonarPage() {
       key: "emergencia",
       title: "Artículos de emergencia",
       description:
-        "Donar artículos como colchones, calefacción eléctrica, o financiar un refugio.",
+        "Donar artículos como cobijas, calefacción eléctrica, medicamentos, equipo de emergencia.",
       icon: "bed-outline",
     });
   }
